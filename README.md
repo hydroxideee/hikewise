@@ -1,1 +1,1 @@
-*Explain buildign and running here before submitting*
+*Explain building and running here before submitting*
