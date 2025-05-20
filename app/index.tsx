@@ -1,17 +1,26 @@
+import React, { useState } from 'react';
 import { View, Button, StyleSheet, Pressable} from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialIcons } from '@expo/vector-icons';
 
 export default function Index() {
   const router = useRouter();
+  const [isNav, setIsNav] = useState(false);
+
+  const handleNav = (path: string) => {
+    if (isNav) return;
+    setIsNav(true);
+    router.push(path);
+    setTimeout(() => setIsNav(false), 500);
+  }
 
   return (
     <View style={styles.container}>
-      <Pressable onPress={() => router.push('/pref')} style={styles.leftIcon}>
+      <Pressable onPress={() => handleNav('/pref')} style={styles.leftIcon}>
         <MaterialIcons name="menu" size={48} color="#333" />
       </Pressable>
 
-      <Pressable onPress={() => router.push('/fav')} style={styles.rightIcon}>
+      <Pressable onPress={() => handleNav('/fav')} style={styles.rightIcon}>
          <MaterialIcons name="star" size={48} color="#333" />
       </Pressable>
     </View>
