@@ -2,6 +2,9 @@ import React, { useCallback, useEffect, useState } from 'react';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { Stack } from 'expo-router';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { StyleSheet } from 'react-native';
+
 
 SplashScreen.preventAutoHideAsync();
 
@@ -24,5 +27,16 @@ export default function Layout() {
     return null;
   }
 
-  return <Stack screenOptions={{ headerShown: false }} />;
-}
+  return (
+      <GestureHandlerRootView style={styles.container}>
+        <Stack screenOptions={{ headerShown: false }} />
+      </GestureHandlerRootView>
+    );
+  }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+})
+
