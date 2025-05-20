@@ -1,21 +1,24 @@
 import React, { useState, useRef, useMemo } from 'react';
-import { View, Button, StyleSheet, Pressable, Text} from "react-native";
+import { View, StyleSheet, Pressable, Text, Dimensions, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialIcons } from '@expo/vector-icons';
 import BottomSheet from '@gorhom/bottom-sheet';
 
+const { width, height } = Dimensions.get('window');
+
 export default function Index() {
   const router = useRouter();
   const [isNav, setIsNav] = useState(false);
-  const bottomSheetRef = useRef<BottomSheet>(null)
-  const snapPoints = useMemo(() => ['25%'],[]);
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => ['25%'], []);
+  const [sheetIndex, setSheetIndex] = useState(-1);
 
   const handleNav = (path: string) => {
     if (isNav) return;
     setIsNav(true);
     router.push(path);
     setTimeout(() => setIsNav(false), 500);
-  }
+  };
 
   return (
     <View style={styles.container}>
@@ -24,27 +27,29 @@ export default function Index() {
       </Pressable>
 
       <Pressable onPress={() => handleNav('/fav')} style={styles.rightIcon}>
-         <MaterialIcons name="star" size={48} color="#333" />
+        <MaterialIcons name="star" size={48} color="#333" />
       </Pressable>
 
-      <Pressable onPress={() => bottomSheetRef.current?.expand()} style={styles.recButton}>
+      <TouchableOpacity onPress={() => setSheetIndex(0)} style={styles.recButton}>
         <Text style={styles.buttonText}>Recommend</Text>
-      </Pressable>
+      </TouchableOpacity>
 
-      <Pressable onPress={() => bottomSheetRef.current?.expand()} style={styles.dateButton}>
+      <Pressable onPress={() => setSheetIndex(0)} style={styles.dateButton}>
         <Text style={styles.buttonText}>Date View</Text>
       </Pressable>
 
       <BottomSheet
         ref={bottomSheetRef}
-        index={-1}
-        snapPoints={['25%']}
+        index={sheetIndex}
+        onChange={setSheetIndex}
+        snapPoints={snapPoints}
         enablePanDownToClose={true}
-        backgroundStyle={{backgroundColor:'fffade'}}>
-          <View style={styles.sheetContent}>
-            <Text style={styles.sheetTitle}>More Info</Text>
-            <Text>awdwadawdawdawd</Text>
-          </View>
+        backgroundStyle={{ backgroundColor: '#fffade' }}
+      >
+        <View style={styles.sheetContent}>
+          <Text style={styles.sheetTitle}>More Info</Text>
+          <Text>awdwadawdawdawd</Text>
+        </View>
       </BottomSheet>
     </View>
   );
@@ -58,14 +63,14 @@ const styles = StyleSheet.create({
   leftIcon: {
     padding: 10,
     position: 'absolute',
-    top: 30,
-    left: 20,
+    top: height * 0.04,
+    left: width * 0.05,
   },
   rightIcon: {
     padding: 10,
     position: 'absolute',
-    top: 30,
-    right: 20,
+    top: height * 0.04,
+    right: width * 0.05,
   },
   recButton: {
     backgroundColor: 'green',
@@ -74,10 +79,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     position: 'absolute',
-    bottom: 50,
-    left: 30,
+    bottom: height * 0.07,
+    left: width * 0.07,
   },
-
   dateButton: {
     backgroundColor: 'green',
     paddingVertical: 12,
@@ -85,10 +89,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: 'center',
     position: 'absolute',
-    bottom: 50,
-    right: 30,
+    bottom: height * 0.07,
+    right: width * 0.07,
   },
-
   buttonText: {
     color: 'white',
     fontSize: 16,
@@ -96,7 +99,6 @@ const styles = StyleSheet.create({
     fontFamily: 'JetBrainsMono-Bold',
     textAlign: 'center',
   },
-
   sheetContent: {
     padding: 20,
   },
