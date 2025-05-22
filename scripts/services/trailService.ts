@@ -1,11 +1,7 @@
 import { GOOGLE_API_KEY } from '@env';
 import { KNOWN_TRAILS, TrailCoordinates } from '../data/knownTrails';
 
-export interface TrailInfo {
-  name: string;
-  latitude: number;
-  longitude: number;
-  place_id?: string;
+export interface TrailInfo extends TrailCoordinates {
   imageUrls: string[];
 }
 
@@ -35,14 +31,18 @@ interface PlacesApiResponse {
   error_message?: string;
 }
 
-// Helper function to calculate distance between two coordinates
+// Constants
+const EARTH_RADIUS_KM = 6371;
+
+// Utility functions
+const toRad = (value: number): number => (value * Math.PI) / 180;
+
 const calculateDistance = (
   lat1: number,
   lon1: number,
   lat2: number,
   lon2: number
 ): number => {
-  const R = 6371; // Earth's radius in kilometers
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   const a =
@@ -52,20 +52,50 @@ const calculateDistance = (
       Math.sin(dLon / 2) *
       Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+  return EARTH_RADIUS_KM * c;
 };
 
-const toRad = (value: number): number => {
-  return (value * Math.PI) / 180;
+// API functions
+const fetchPlaceDetails = async (placeId: string): Promise<PlacePhoto[]> => {
+  const url = `https://places.googleapis.com/v1/places/${placeId}?fields=id,photos&key=${GOOGLE_API_KEY}`;
+  const response = await fetch(url);
+  const data: PlacesApiResponse = await response.json();
+
+  if (!data.result) {
+    throw new Error(`Could not get place details for place ID: ${placeId}`);
+  }
+  return data.result.photos || [];
 };
 
-// Find n closest trails to given coordinates
+const searchPlace = async (name: string): Promise<{ placeId: string; photoRefs: string[] }> => {
+  const searchQuery = `${name} trail UK`;
+  const encodedQuery = encodeURIComponent(searchQuery);
+  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodedQuery}&key=${GOOGLE_API_KEY}&fields=place_id,photos`;
+  
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: { 'Accept': 'application/json' }
+  });
+
+  const data: PlacesApiResponse = await response.json();
+  
+  if (!data.results?.length) {
+    throw new Error(`Could not find place ID for trail: ${name}`);
+  }
+
+  const result = data.results[0];
+  return {
+    placeId: result.place_id,
+    photoRefs: result.photos?.map(photo => photo.photo_reference) || []
+  };
+};
+
+// Public functions
 export const findNearestTrails = (
   userLatitude: number,
   userLongitude: number,
   n: number = 5
 ): TrailCoordinates[] => {
-  // Calculate distances to all known trails
   const trailsWithDistances = KNOWN_TRAILS.map(trail => ({
     ...trail,
     distance: calculateDistance(
@@ -83,53 +113,22 @@ export const findNearestTrails = (
     .map(({ name, latitude, longitude }) => ({ name, latitude, longitude }));
 };
 
-// Get trail information directly from Places API
 export const getTrailImages = async (coordinates: TrailCoordinates): Promise<TrailInfo> => {
-  // Get place ID either from coordinates object or by searching
   let placeId = coordinates.place_id;
-  let photoRefs = [];
+  let photoRefs: string[] = [];
 
   if (placeId) {
-    // Call Places API for details including photos
-    const url = `https://places.googleapis.com/v1/places/${placeId}?fields=id,photos&key=${GOOGLE_API_KEY}`;
-    const response = await fetch(url);
-    const data = await response.json();
-
-    if (!data.result) {
-      throw new Error(`Could not get place details for trail: ${coordinates.name}`);
-    }
-    photoRefs = data.result.photos?.map((photo: PlacePhoto) => photo.name) || [];
-  }
-  else {
-    // use text search with fields place_id and photos
-    console.log('making search request')
-    const searchQuery = `${coordinates.name} trail UK`;
-    const encodedQuery = encodeURIComponent(searchQuery);
-    const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodedQuery}&key=${GOOGLE_API_KEY}&fields=place_id,photos`;
-    
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json'
-      }
-    });
-
-    const data = await response.json();
-    console.log('API Response data:', data);
-    // TODO: cache place_id for a location for more reliable results. photos cannot be cached.
-    if (data.results && data.results.length > 0) {
-      const result = data.results[0];
-      placeId = result.place_id;
-      photoRefs = result.photos?.map((photo: any) => photo.photo_reference) || [];
-    } else {
-      throw new Error(`Could not find place ID for trail: ${coordinates.name}`);
-    }
-    console.log('placeId', placeId, '\nphotoRefs', photoRefs);
+    const photos = await fetchPlaceDetails(placeId);
+    photoRefs = photos.map(photo => photo.name);
+  } else {
+    const searchResult = await searchPlace(coordinates.name);
+    placeId = searchResult.placeId;
+    photoRefs = searchResult.photoRefs;
   }
 
   return {
     ...coordinates,
-    imageUrls: photoRefs.map((ref: string) => 
+    imageUrls: photoRefs.map(ref => 
       `https://places.googleapis.com/v1/places/${placeId}/photos/${ref}/media?maxHeightPx=600&maxWidthPx=600&key=${GOOGLE_API_KEY}`
     )
   };
