@@ -71,7 +71,8 @@ const searchPlace = async (name: string): Promise<{ placeId: string; photoRefs: 
   const searchQuery = `${name} trail UK`;
   const encodedQuery = encodeURIComponent(searchQuery);
   const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodedQuery}&key=${GOOGLE_API_KEY}&fields=place_id,photos`;
-  
+  console.log('Search URL:', url);
+
   const response = await fetch(url, {
     method: 'GET',
     headers: { 'Accept': 'application/json' }
@@ -119,17 +120,21 @@ export const getTrailImages = async (coordinates: TrailCoordinates): Promise<Tra
 
   if (placeId) {
     const photos = await fetchPlaceDetails(placeId);
-    photoRefs = photos.map(photo => photo.name);
+    photoRefs = photos.map(photo => photo.photo_reference || '');
   } else {
+    // console.log('Searching for place ID...');
     const searchResult = await searchPlace(coordinates.name);
+    // console.log('Search result:', searchResult);
     placeId = searchResult.placeId;
     photoRefs = searchResult.photoRefs;
   }
 
   return {
     ...coordinates,
-    imageUrls: photoRefs.map(ref => 
-      `https://places.googleapis.com/v1/places/${placeId}/photos/${ref}/media?maxHeightPx=600&maxWidthPx=600&key=${GOOGLE_API_KEY}`
-    )
+    imageUrls: photoRefs
+      .filter(ref => ref) // Filter out any empty references
+      .map(ref => 
+        `https://maps.googleapis.com/maps/api/place/photo?maxheight=600&maxwidth=600&photo_reference=${ref}&key=${GOOGLE_API_KEY}`
+      )
   };
 };

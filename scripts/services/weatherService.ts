@@ -105,6 +105,7 @@ export class WeatherService {
   private readonly apiKey = GOOGLE_API_KEY;
   private readonly baseUrl = 'https://weather.googleapis.com/v1';
 
+  // Fetch weather data from the API
   private async fetchWeatherData<T>(endpoint: string, params: URLSearchParams): Promise<T> {
     const response = await fetch(`${this.baseUrl}/${endpoint}?${params}`);
     if (!response.ok) {
