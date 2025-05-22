@@ -97,6 +97,7 @@ packagingOptions {
 
     namespace 'com.anonymous.hikewise'
     defaultConfig {
+        vectorDrawables.useSupportLibrary = true
         applicationId 'com.anonymous.hikewise'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion

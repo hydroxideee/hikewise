@@ -1,0 +1,19 @@
+diff --git a/node_modules/@rnmapbox/maps/src/components/MapView.tsx b/node_modules/@rnmapbox/maps/src/components/MapView.tsx
+index 24b866088..b59820c69 100644
+--- a/node_modules/@rnmapbox/maps/src/components/MapView.tsx
++++ b/node_modules/@rnmapbox/maps/src/components/MapView.tsx
+@@ -1171,6 +1171,14 @@ class MapView extends NativeBridgeComponent(
+       }
+     }
+ 
++    if (mapView == null) {
++        mapView = (
++          <RNMBXMapView {...props} {...callbacks}>
++            {this.props.children}
++          </RNMBXMapView>
++        )
++    }
++
+     return (
+       <View
+         onLayout={this._onLayout}
