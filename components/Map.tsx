@@ -43,9 +43,12 @@ function toGeoJson(points: TrailCoordinates[]) {
   return geojson;
 }
 
+const MAP_STYLE_URL = "mapbox://styles/hikewise/cmawz9a9r006w01sdawjq2n4d";
+
 interface MapProps {
   trails: TrailCoordinates[];
   onTrailSelect: (trail: PointProperties) => void;
+  favorites?: string[];
 }
 
 export default function Map(props: MapProps) {
@@ -78,9 +81,15 @@ export default function Map(props: MapProps) {
     <View style={StyleSheet.absoluteFillObject}>
       <Mapbox.MapView
         style={styles.map}
-        styleURL={Mapbox.StyleURL.Outdoors}
+        scaleBarEnabled={false}
+        styleURL={MAP_STYLE_URL}
         onDidFinishRenderingMapFully={() => setMapReady(true)}
       >
+        <Mapbox.Images
+          images={{
+            favorite: require("../assets/images/favorite.png"),
+          }}
+        />
         <Mapbox.Camera ref={cameraRef} zoomLevel={10} />
         <Mapbox.UserLocation
           visible
@@ -114,9 +123,8 @@ export default function Map(props: MapProps) {
           /> */}
           <Mapbox.CircleLayer
             id="pointsCircles"
-            sourceLayerID="pointsSource"
             style={{
-              circleRadius: 6,
+              circleRadius: 8,
               circleColor: [
                 "interpolate",
                 ["linear"],
@@ -130,6 +138,21 @@ export default function Map(props: MapProps) {
               ],
               circleStrokeColor: "#000000", // black outline
               circleStrokeWidth: 1.5,
+            }}
+          />
+
+          <Mapbox.SymbolLayer
+            id="pointsFavorites"
+            filter={["in", ["get", "name"], ["literal", props.favorites ?? []]]}
+            style={{
+              iconImage: "favorite", // matches your key
+              iconSize: 0.05, // tweak to fit circle
+              iconAllowOverlap: true,
+              // push it to top‐right of circle:
+              iconOffset: [
+                // x right, y up in pixels
+                150, -75,
+              ],
             }}
           />
         </Mapbox.ShapeSource>
