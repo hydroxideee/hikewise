@@ -33,7 +33,9 @@ export default function Index() {
     <View style={styles.container}>
       <Map
         trails={KNOWN_TRAILS}
-        onTrailSelect={(trail) => console.log(`Pressed: ${trail.name}`)}
+        onTrailSelect={(trail) =>
+          console.log(`Pressed: ${trail.name} ${trail.score}`)
+        }
       />
 
       <Pressable onPress={() => handleNav("/pref")} style={styles.leftIcon}>

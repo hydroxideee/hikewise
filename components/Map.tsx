@@ -5,8 +5,8 @@ import Mapbox from "@rnmapbox/maps";
 import type { FeatureCollection, Point } from "geojson";
 import { useEffect, useRef, useState } from "react";
 
-interface PointProperties {
-  trail: TrailCoordinates;
+interface PointProperties extends TrailCoordinates {
+  score: number;
 }
 
 Mapbox.setAccessToken(
@@ -36,7 +36,7 @@ function toGeoJson(points: TrailCoordinates[]) {
     features: points.map((p) => ({
       type: "Feature",
       id: p.name,
-      properties: { trail: p },
+      properties: { ...p, score: Math.random() * 10 },
       geometry: { type: "Point", coordinates: [p.longitude, p.latitude] },
     })),
   };
@@ -45,7 +45,7 @@ function toGeoJson(points: TrailCoordinates[]) {
 
 interface MapProps {
   trails: TrailCoordinates[];
-  onTrailSelect: (trail: TrailCoordinates) => void;
+  onTrailSelect: (trail: PointProperties) => void;
 }
 
 export default function Map(props: MapProps) {
@@ -97,10 +97,10 @@ export default function Map(props: MapProps) {
                 .coordinates,
               zoomLevel: 12,
             });
-            props.onTrailSelect(feature.properties?.trail);
+            props.onTrailSelect(feature.properties as PointProperties);
           }}
         >
-          <Mapbox.SymbolLayer
+          {/* <Mapbox.SymbolLayer
             id="pointsSymbols"
             sourceLayerID="pointsSource"
             style={{
@@ -110,6 +110,26 @@ export default function Map(props: MapProps) {
               //   textField: ["get", "name"], // optional: show text labels
               textOffset: [0, 1.2], // push text above the icon
               textAllowOverlap: false,
+            }}
+          /> */}
+          <Mapbox.CircleLayer
+            id="pointsCircles"
+            sourceLayerID="pointsSource"
+            style={{
+              circleRadius: 6,
+              circleColor: [
+                "interpolate",
+                ["linear"],
+                ["get", "score"],
+                0,
+                "#ff9999", // soft red
+                5,
+                "#ffcc99", // pastel orange
+                10,
+                "#99ff99", // minty green
+              ],
+              circleStrokeColor: "#000000", // black outline
+              circleStrokeWidth: 1.5,
             }}
           />
         </Mapbox.ShapeSource>
