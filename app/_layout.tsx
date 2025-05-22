@@ -1,3 +1,4 @@
+import 'react-native-reanimated'; // must be before react and other imports
 import React, { useCallback, useEffect, useState } from 'react';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
@@ -28,15 +29,9 @@ export default function Layout() {
   }
 
   return (
-      <GestureHandlerRootView style={styles.container}>
-        <Stack screenOptions={{ headerShown: false }} />
+      <GestureHandlerRootView>
+            <Stack screenOptions={{ headerShown: false }} />
       </GestureHandlerRootView>
     );
-  }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-})
+}
 
