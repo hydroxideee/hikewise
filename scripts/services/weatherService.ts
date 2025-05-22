@@ -1,37 +1,107 @@
 import { GOOGLE_API_KEY } from '@env';
 
-interface WeatherResponse {
-  temperature: {
-    value: number;
-    unit: string;
+interface WeatherCondition {
+  iconBaseUri: string;
+  description: {
+    text: string;
+    languageCode: string;
   };
-  humidity: {
-    value: number;
-    unit: string;
-  };
-  windSpeed: {
-    value: number;
-    unit: string;
-  };
-  windDirection: {
-    value: number;
-    unit: string;
-  };
-  precipitation: {
-    value: number;
-    unit: string;
-  };
-  cloudCover: {
-    value: number;
-    unit: string;
-  };
-  timestamp: string;
-  condition: string;
+  type: string;
 }
 
-interface ForecastResponse {
-  hourly: WeatherResponse[];
-  daily: WeatherResponse[];
+interface Temperature {
+  degrees: number;
+  unit: string;
+}
+
+interface Precipitation {
+  probability: {
+    percent: number;
+    type: string;
+  };
+  snowQpf: {
+    quantity: number;
+    unit: string;
+  };
+  qpf: {
+    quantity: number;
+    unit: string;
+  };
+}
+
+interface Wind {
+  direction: {
+    degrees: number;
+    cardinal: string;
+  };
+  speed: {
+    value: number;
+    unit: string;
+  };
+  gust: {
+    value: number;
+    unit: string;
+  };
+}
+
+interface CurrentConditionsHistory {
+  temperatureChange: Temperature;
+  maxTemperature: Temperature;
+  minTemperature: Temperature;
+  snowQpf: {
+    quantity: number;
+    unit: string;
+  };
+  qpf: {
+    quantity: number;
+    unit: string;
+  };
+}
+
+interface WeatherResponse {
+    interval?: ForecastInterval;
+    displayDateTime?: DisplayDateTime;
+  currentTime?: string;
+  timeZone?: {
+    id: string;
+  };
+  isDaytime?: boolean;
+  weatherCondition: WeatherCondition;
+  temperature: Temperature;
+  feelsLikeTemperature: Temperature;
+  dewPoint: Temperature;
+  heatIndex: Temperature;
+  windChill: Temperature;
+  relativeHumidity: number;
+  uvIndex: number;
+  precipitation: Precipitation;
+  thunderstormProbability: number;
+  airPressure: {
+    meanSeaLevelMillibars: number;
+  };
+  wind: Wind;
+  visibility: {
+    distance: number;
+    unit: string;
+  };
+  cloudCover: number;
+  currentConditionsHistory: CurrentConditionsHistory;
+}
+
+interface ForecastInterval {
+  startTime: string;
+  endTime: string;
+}
+
+interface DisplayDateTime {
+  year: number;
+  month: number;
+  day: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  nanos: number;
+  utcOffset: string;
 }
 
 export class WeatherService {
