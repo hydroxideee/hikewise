@@ -84,7 +84,7 @@ export const findNearestTrails = (
 };
 
 // Get trail information directly from Places API
-export const getTrailInfo = async (coordinates: TrailCoordinates): Promise<TrailInfo> => {
+export const getTrailImages = async (coordinates: TrailCoordinates): Promise<TrailInfo> => {
   // Get place ID either from coordinates object or by searching
   let placeId = coordinates.place_id;
   let photoRefs = [];

@@ -1,4 +1,4 @@
-import { findNearestTrails, getTrailInfo } from '../trailService';
+import { findNearestTrails, getTrailImages } from '../trailService';
 
 // These tests make real API calls and should be run separately from unit tests
 // You may want to add a longer timeout for these tests
@@ -34,7 +34,7 @@ describe('trailService Integration Tests', () => {
       const nearestTrails = findNearestTrails(userLocation.latitude, userLocation.longitude, n);
       
       // Get info for the first trail
-      const trailInfo = await getTrailInfo(nearestTrails[0]);
+      const trailInfo = await getTrailImages(nearestTrails[0]);
       
       console.log('Trail info:', {
         name: nearestTrails[0].name,
@@ -57,7 +57,7 @@ describe('trailService Integration Tests', () => {
       // Try to get info for all trails to see which ones have photos
       for (const trail of nearestTrails) {
         try {
-          const trailInfo = await getTrailInfo(trail);
+          const trailInfo = await getTrailImages(trail);
           console.log(`Trail "${trail.name}" info:`, {
             hasPhotos: trailInfo.imageUrls.length > 0,
             photoCount: trailInfo.imageUrls.length

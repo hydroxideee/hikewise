@@ -110,10 +110,10 @@ nearestTrails.forEach(trail => {
 ### Getting Trail Information
 
 ```typescript
-import { getTrailInfo } from './services/trailService';
+import { getTrailImages } from './services/trailService';
 
 // Get information for a specific trail
-const trailInfo = await getTrailInfo({
+const trailInfo = await getTrailImages({
     name: "Example Trail",
     latitude: 52.1951,
     longitude: 0.1313
@@ -139,7 +139,7 @@ try {
 }
 
 try {
-    const trailInfo = await getTrailInfo(trail);
+    const trailInfo = await getTrailImages(trail);
     // Process trail data
 } catch (error) {
     console.error('Failed to fetch trail information:', error.message);
