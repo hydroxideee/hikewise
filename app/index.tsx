@@ -1,19 +1,28 @@
-import React, { useState, useRef, useMemo } from 'react';
-import { View, StyleSheet, Pressable, Text, Dimensions, TouchableOpacity } from "react-native";
-import { useRouter } from "expo-router";
-import { MaterialIcons } from '@expo/vector-icons';
-import BottomSheet from '@gorhom/bottom-sheet';
+import Map from "@/components/Map";
+import { KNOWN_TRAILS } from "@/scripts/data/knownTrails";
+import { MaterialIcons } from "@expo/vector-icons";
+import BottomSheet from "@gorhom/bottom-sheet";
+import { Href, useRouter } from "expo-router";
+import React, { useMemo, useRef, useState } from "react";
+import {
+  Dimensions,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 
 export default function Index() {
   const router = useRouter();
   const [isNav, setIsNav] = useState(false);
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ['25%'], []);
+  const snapPoints = useMemo(() => ["25%"], []);
   const [sheetIndex, setSheetIndex] = useState(-1);
 
-  const handleNav = (path: string) => {
+  const handleNav = (path: Href) => {
     if (isNav) return;
     setIsNav(true);
     router.push(path);
@@ -22,15 +31,20 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <Pressable onPress={() => handleNav('/pref')} style={styles.leftIcon}>
+      <Map trails={KNOWN_TRAILS} />
+
+      <Pressable onPress={() => handleNav("/pref")} style={styles.leftIcon}>
         <MaterialIcons name="menu" size={48} color="#333" />
       </Pressable>
 
-      <Pressable onPress={() => handleNav('/fav')} style={styles.rightIcon}>
+      <Pressable onPress={() => handleNav("/fav")} style={styles.rightIcon}>
         <MaterialIcons name="star" size={48} color="#333" />
       </Pressable>
 
-      <TouchableOpacity onPress={() => setSheetIndex(0)} style={styles.recButton}>
+      <TouchableOpacity
+        onPress={() => setSheetIndex(0)}
+        style={styles.recButton}
+      >
         <Text style={styles.buttonText}>Recommend</Text>
       </TouchableOpacity>
 
@@ -44,7 +58,7 @@ export default function Index() {
         onChange={setSheetIndex}
         snapPoints={snapPoints}
         enablePanDownToClose={true}
-        backgroundStyle={{ backgroundColor: '#fffade' }}
+        backgroundStyle={{ backgroundColor: "#fffade" }}
       >
         <View style={styles.sheetContent}>
           <Text style={styles.sheetTitle}>More Info</Text>
@@ -58,54 +72,54 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fffade',
+    backgroundColor: "#fffade",
   },
   leftIcon: {
     padding: 10,
-    position: 'absolute',
+    position: "absolute",
     top: height * 0.04,
     left: width * 0.05,
   },
   rightIcon: {
     padding: 10,
-    position: 'absolute',
+    position: "absolute",
     top: height * 0.04,
     right: width * 0.05,
   },
   recButton: {
-    backgroundColor: 'green',
+    backgroundColor: "green",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 20,
-    justifyContent: 'center',
-    position: 'absolute',
+    justifyContent: "center",
+    position: "absolute",
     bottom: height * 0.07,
     left: width * 0.07,
   },
   dateButton: {
-    backgroundColor: 'green',
+    backgroundColor: "green",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 20,
-    justifyContent: 'center',
-    position: 'absolute',
+    justifyContent: "center",
+    position: "absolute",
     bottom: height * 0.07,
     right: width * 0.07,
   },
   buttonText: {
-    color: 'white',
+    color: "white",
     fontSize: 16,
     minWidth: 120,
-    fontFamily: 'JetBrainsMono-Bold',
-    textAlign: 'center',
+    fontFamily: "JetBrainsMono-Bold",
+    textAlign: "center",
   },
   sheetContent: {
     padding: 20,
   },
   sheetTitle: {
     fontSize: 32,
-    fontFamily: 'JetBrainsMono-Bold',
-    textAlign: 'center',
+    fontFamily: "JetBrainsMono-Bold",
+    textAlign: "center",
     marginBottom: 10,
   },
 });
