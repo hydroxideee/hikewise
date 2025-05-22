@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Svg, { Path } from "react-native-svg";
 
 const { width, height } = Dimensions.get("window");
 
@@ -43,7 +44,20 @@ export default function Index() {
       </Pressable>
 
       <Pressable onPress={() => handleNav("/fav")} style={styles.rightIcon}>
-        <MaterialIcons name="star" size={48} color="#333" />
+        <Svg
+          width={48}
+          height={48}
+          fill="#F7E88D"
+          stroke="#000"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          viewBox="0 0 24 24"
+        >
+          <Path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" />
+        </Svg>
+        {/* <Star size={48} color={"#000000"} fill={"#F7E88D"} /> */}
+        {/* <MaterialIcons name="star" size={48} color="#333" /> */}
       </Pressable>
 
       <TouchableOpacity
@@ -96,6 +110,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 20,
+    borderWidth: 1.5,
     justifyContent: "center",
     position: "absolute",
     bottom: height * 0.07,
@@ -106,6 +121,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 20,
+    borderWidth: 1.5,
     justifyContent: "center",
     position: "absolute",
     bottom: height * 0.07,
