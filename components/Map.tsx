@@ -92,11 +92,10 @@ export default function Map(props: MapProps) {
           onPress={(e) => {
             console.log(`Pressed: ${e.features[0].id}`);
             cameraRef.current?.setCamera({
-              centerCoordinate: [
-                e.coordinates.longitude,
-                e.coordinates.latitude,
-              ],
-              zoomLevel: 15,
+              centerCoordinate: (
+                e.features[0].geometry as { coordinates: number[] }
+              ).coordinates,
+              zoomLevel: 12,
             });
           }}
         >
