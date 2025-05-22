@@ -1,9 +1,13 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  testMatch: ['**/__tests__/**/*.test.ts'],
   transform: {
     '^.+\\.tsx?$': 'ts-jest',
   },
+  moduleNameMapper: {
+    '^@env$': '<rootDir>/scripts/services/__mocks__/@env.js',
+  },
+  transformIgnorePatterns: [
+    'node_modules/(?!(react-native|@react-native|expo|@expo)/)',
+  ],
 }; 
