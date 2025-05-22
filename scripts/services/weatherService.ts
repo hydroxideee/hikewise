@@ -59,7 +59,7 @@ interface CurrentConditionsHistory {
   };
 }
 
-interface WeatherResponse {
+export interface WeatherResponse {
   interval?: {
     startTime: string;
     endTime: string;

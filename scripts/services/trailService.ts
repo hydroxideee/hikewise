@@ -5,7 +5,7 @@ export interface TrailInfo extends TrailCoordinates {
   imageUrls: string[];
 }
 
-interface PlacePhoto {
+export interface PlacePhoto {
   name: string;
   photo_reference?: string;
   height?: number;
