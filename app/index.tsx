@@ -31,7 +31,10 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
-      <Map trails={KNOWN_TRAILS} />
+      <Map
+        trails={KNOWN_TRAILS}
+        onTrailSelect={(trail) => console.log(`Pressed: ${trail.name}`)}
+      />
 
       <Pressable onPress={() => handleNav("/pref")} style={styles.leftIcon}>
         <MaterialIcons name="menu" size={48} color="#333" />

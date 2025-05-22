@@ -6,7 +6,7 @@ import type { FeatureCollection, Point } from "geojson";
 import { useEffect, useRef, useState } from "react";
 
 interface PointProperties {
-  //   title: string;
+  trail: TrailCoordinates;
 }
 
 Mapbox.setAccessToken(
@@ -36,7 +36,7 @@ function toGeoJson(points: TrailCoordinates[]) {
     features: points.map((p) => ({
       type: "Feature",
       id: p.name,
-      properties: {},
+      properties: { trail: p },
       geometry: { type: "Point", coordinates: [p.longitude, p.latitude] },
     })),
   };
@@ -45,6 +45,7 @@ function toGeoJson(points: TrailCoordinates[]) {
 
 interface MapProps {
   trails: TrailCoordinates[];
+  onTrailSelect: (trail: TrailCoordinates) => void;
 }
 
 export default function Map(props: MapProps) {
@@ -90,13 +91,13 @@ export default function Map(props: MapProps) {
           id="pointsSource"
           shape={toGeoJson(props.trails)}
           onPress={(e) => {
-            console.log(`Pressed: ${e.features[0].id}`);
+            const feature = e.features[0];
             cameraRef.current?.setCamera({
-              centerCoordinate: (
-                e.features[0].geometry as { coordinates: number[] }
-              ).coordinates,
+              centerCoordinate: (feature.geometry as { coordinates: number[] })
+                .coordinates,
               zoomLevel: 12,
             });
+            props.onTrailSelect(feature.properties?.trail);
           }}
         >
           <Mapbox.SymbolLayer
@@ -106,7 +107,7 @@ export default function Map(props: MapProps) {
               iconImage: "marker-15", // built-in Mapbox icon
               iconAllowOverlap: true, // don’t hide overlapping points
               iconSize: 2.5, // make it a bit bigger
-              textField: ["get", "title"], // optional: show text labels
+              //   textField: ["get", "name"], // optional: show text labels
               textOffset: [0, 1.2], // push text above the icon
               textAllowOverlap: false,
             }}
