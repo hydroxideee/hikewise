@@ -9,15 +9,19 @@ const HEADER_HEIGHT = 100;
 
 export default function PrefScreen() {
   const router = useRouter();
-  const [radius, setRadius] = useState('');
-  const sliderLabels = ['Temperature', 'Wind Speed', 'Precipitation', 'Cloud Cover', 'UV Index'];
 
+  // State for radius input (user-defined search radius)
+  const [radius, setRadius] = useState('');
+
+  // Slider labels for different weather preferences
+  const sliderLabels = ['Temperature', 'Wind Speed', 'Precipitation', 'Cloud Cover', 'UV Index'];
   const [sliderValues, setSliderValues] = useState(
     Object.fromEntries(sliderLabels.map(label => [label, 50]))
   );
 
   return (
     <View style={styles.container}>
+      {/* Header with back button and title */}
       <View style={styles.headerRow}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <MaterialIcons name="arrow-back" size={48} color="#333" />
@@ -26,17 +30,24 @@ export default function PrefScreen() {
         <View style={styles.backButton} />
       </View>
 
+      {/* Main scrollable content */}
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+        {/* Sliders box */}
         <View style={styles.box}>
           <Text style={styles.pageTitle}>What are your ideal weather conditions?</Text>
           <Text style={styles.subHeader}>(Left to Right = Low to High)</Text>
 
+          {/* Render each slider */}
           {sliderLabels.map((label, index) => (
             <View key={index} style={styles.sliderGroup}>
-              <Text style={styles.sliderLabel}>{label}: {sliderValues[label]}</Text>
+              <Text style={styles.sliderLabel}>
+                {label}: {sliderValues[label]}
+              </Text>
+
+              {/* Slider input (individual for each feature) */}
               <Slider
                 style={styles.slider}
                 minimumValue={0}
@@ -54,8 +65,11 @@ export default function PrefScreen() {
           ))}
         </View>
 
+        {/* Radius input box */}
         <View style={styles.box}>
           <Text style={styles.pageTitle}>How far away would you like to track (radius)?</Text>
+
+          {/* Numeric text input*/}
           <TextInput
             style={styles.input}
             placeholder="Enter radius in km"
@@ -70,6 +84,7 @@ export default function PrefScreen() {
   );
 }
 
+// styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -111,7 +126,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
-    elevation: 3,
+    elevation: 3, // Android shadow
   },
   pageTitle: {
     fontSize: 22,
