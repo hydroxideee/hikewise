@@ -126,7 +126,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
-    elevation: 3, // Android shadow
+    elevation: 3,
   },
   pageTitle: {
     fontSize: 22,
