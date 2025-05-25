@@ -9,13 +9,23 @@ const { width, height } = Dimensions.get('window');
 
 export default function Index() {
   const router = useRouter();
-  const [isNav, setIsNav] = useState(false);
-  const [date, setDate] = useState(new Date());
-  const [showPicker, setShowPicker] = useState(false);
+
+  // Bottom sheet ref and control
   const sheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => ['37%','100%'], []);
+  const [isSheetExpanded, setIsSheetExpanded] = useState(false);
+  const openSheet = () => {
+    sheetRef.current?.snapToIndex(0);
+  };
 
-  const snapPoints = useMemo(() => ['40%', '100%'], []);
 
+  // State for selected date
+  const [date, setDate] = useState(new Date());
+
+  // Controls visibility of date picker
+  const [showPicker, setShowPicker] = useState(false);
+
+  // Set date range for the date picker
   const minDate = useMemo(() => new Date(), []);
   const maxDate = useMemo(() => {
     const max = new Date();
@@ -23,6 +33,7 @@ export default function Index() {
     return max;
   }, []);
 
+  // Format date to button text readable
   const formatDate = (date: Date) => {
     return date.toLocaleDateString(undefined, {
       year: 'numeric',
@@ -31,6 +42,18 @@ export default function Index() {
     });
   };
 
+  // Handles date change from picker - ios looks better
+  const onChangeDate = (event, selectedDate) => {
+      setShowPicker(Platform.OS === 'ios');
+    if (selectedDate) {
+        setDate(selectedDate);
+    }
+  };
+
+  // Navigation lock to prevent rapid presses
+  const [isNav, setIsNav] = useState(false);
+
+  // Prevents rapid-fire navigation
   const handleNav = (path: string) => {
     if (isNav) return;
     setIsNav(true);
@@ -38,35 +61,29 @@ export default function Index() {
     setTimeout(() => setIsNav(false), 500);
   };
 
-  const openSheet = () => {
-    sheetRef.current?.snapToIndex(0); // open at 40%
-  };
-
-  const onChangeDate = (event, selectedDate) => {
-    setShowPicker(Platform.OS === 'ios');
-    if (selectedDate) {
-      setDate(selectedDate);
-    }
-  };
-
   return (
     <View style={styles.container}>
+      {/* Left nav button (Preferences) */}
       <Pressable onPress={() => handleNav('/pref')} style={styles.leftIcon}>
         <MaterialIcons name="menu" size={48} color="#333" />
       </Pressable>
 
+      {/* Right nav button (Favorites) */}
       <Pressable onPress={() => handleNav('/fav')} style={styles.rightIcon}>
         <MaterialIcons name="star" size={48} color="#333" />
       </Pressable>
 
+      {/* Recommend button to trigger bottom sheet on best trail*/}
       <Pressable onPress={openSheet} style={styles.recButton}>
         <Text style={styles.buttonText}>Recommend</Text>
       </Pressable>
 
+      {/* Date selector */}
       <Pressable onPress={() => setShowPicker(true)} style={styles.dateButton}>
         <Text style={styles.buttonText}>Date: {formatDate(date)}</Text>
       </Pressable>
 
+      {/* Bottom Sheet */}
       <BottomSheet
         ref={sheetRef}
         index={-1}
@@ -74,13 +91,43 @@ export default function Index() {
         enablePanDownToClose={true}
         keyboardBehavior="interactive"
         enableContentPanningGesture={true}
-        backgroundStyle={{ backgroundColor: '#f0f0f0' }}       >
+        backgroundStyle={{ backgroundColor: '#f0f0f0' }}
+        onChange={(index) => {
+          setIsSheetExpanded(index >= 0);
+        }}
+      >
         <BottomSheetScrollView contentContainerStyle={{ padding: 20 }}>
-          <Text style={styles.sheetTitle}>Trail Name</Text>
-          <Text style={styles.text}>Add details here: </Text>
+          {/* Sheet header with trail info and image */}
+          <View style={styles.sheetHeader}>
+            <View style={styles.leftSection}>
+              <Text style={styles.sheetTitle}>Trail Name</Text>
+              <Text style={styles.infoText}>Distance: 5.2 km</Text>
+              <Text style={styles.infoText}>Temperature: 23 C</Text>
+              <Text style={styles.infoText}>Wind Speed: 3km/h</Text>
+              <Text style={styles.infoText}>Precipitation: 20mm</Text>
+              <Text style={styles.infoText}>Overall Score: 7/10</Text>
+            </View>
+            <View style={styles.imageContainer}>
+              <View style={styles.placeholderImage}>
+                <Text style={{ color: '#000' }}>Image</Text>
+              </View>
+            </View>
+          </View>
+
+          <Text style={styles.text}>Swipe up for detailed information:</Text>
+          {/* Graph Section only opens when expanded */}
+          {isSheetExpanded && (
+            <View style={styles.graphSection}>
+              <View style={styles.graphBox}><Text>Graph 1</Text></View>
+              <View style={styles.graphBox}><Text>Graph 2</Text></View>
+              <View style={styles.graphBox}><Text>Graph 3</Text></View>
+              <View style={styles.graphBox}><Text>Graph 4</Text></View>
+            </View>
+          )}
         </BottomSheetScrollView>
       </BottomSheet>
 
+      {/* Date picker functionality */}
       {showPicker && (
         <DateTimePicker
           value={date}
@@ -95,6 +142,7 @@ export default function Index() {
   );
 }
 
+// styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -145,12 +193,62 @@ const styles = StyleSheet.create({
     fontFamily: 'JetBrainsMono-Regular',
     color: '#666',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 30,
   },
   sheetTitle: {
     fontSize: 24,
-    textAlign: 'center',
     fontFamily: 'JetBrainsMono-Bold',
+    marginBottom: 10,
+    textAlign: 'left',
+  },
+  sheetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
+  },
+  leftSection: {
+    flex: 1,
+  },
+  imageContainer: {
+    width: 140,
+    height: 140,
+    borderWidth: 2,
+    borderColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 20,
+  },
+  placeholderImage: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ccc',
+  },
+  infoText: {
+    fontSize: 14,
+    fontFamily: 'JetBrainsMono-Regular',
+    color: '#333',
+    marginBottom: 4,
+  },
+  graphSection: {
+    marginTop: 30,
+    paddingBottom: 60,
+  },
+  graphBox: {
+    height: 150,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 10,
+    marginBottom: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 2,
+    borderColor: '#999',
   },
 });
