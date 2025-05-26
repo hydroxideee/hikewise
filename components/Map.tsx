@@ -47,9 +47,9 @@ const MAP_STYLE_URL = "mapbox://styles/hikewise/cmawz9a9r006w01sdawjq2n4d";
 
 interface MapProps {
   trails: TrailCoordinates[];
-  onTrailSelect: (trail: PointProperties) => void;
-  onMapMoveFromSelectedTrail?: () => void;
-  onCurrentLocationChange: (location: Mapbox.Location) => void;
+  onTrailSelect?: (trail: PointProperties) => void;
+  onUserMoveMap?: () => void;
+  onCurrentLocationChange?: (location: Mapbox.Location) => void;
   favorites?: string[];
 }
 
@@ -77,7 +77,7 @@ export default function Map(props: MapProps) {
         zoomLevel: 10,
       });
     }
-    props.onCurrentLocationChange(location);
+    props.onCurrentLocationChange?.(location);
     setCurrentLocation(location);
   }
 
@@ -88,6 +88,9 @@ export default function Map(props: MapProps) {
         style={styles.map}
         scaleBarEnabled={false}
         styleURL={MAP_STYLE_URL}
+        onCameraChanged={(state) =>
+          state.gestures.isGestureActive && props.onUserMoveMap?.()
+        }
         onDidFinishRenderingMapFully={() => setMapReady(true)}
       >
         <Mapbox.Images
@@ -111,7 +114,7 @@ export default function Map(props: MapProps) {
                 .coordinates,
               zoomLevel: 12,
             });
-            props.onTrailSelect(feature.properties as PointProperties);
+            props.onTrailSelect?.(feature.properties as PointProperties);
           }}
         >
           {/* <Mapbox.SymbolLayer

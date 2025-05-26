@@ -35,7 +35,8 @@ export default function Index() {
     sheetRef.current?.snapToIndex(0);
   };
   const closeSheet = () => {
-    sheetRef.current?.snapToIndex(-1);
+    // sheetRef.current?.snapToIndex(-1);
+    sheetRef.current?.close();
   };
 
   // State for current trail
@@ -111,6 +112,7 @@ export default function Index() {
         onCurrentLocationChange={(location: Mapbox.Location) =>
           setCurrentLocation(location)
         }
+        onUserMoveMap={() => closeSheet()}
       />
       {/* Left nav button (Preferences) */}
       <Pressable onPress={() => handleNav("/pref")} style={styles.leftIcon}>
