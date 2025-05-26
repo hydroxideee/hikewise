@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import React, { useState } from 'react';
 
 const screenHeight = Dimensions.get('window').height;
 const itemHeight = screenHeight * 0.3;
@@ -8,29 +9,66 @@ const itemHeight = screenHeight * 0.3;
 export default function FavScreen() {
   const router = useRouter();
 
-  const favourites = ['Trail 1', 'Trail 2', 'Trail 3', 'Trail etc'];
+  // Struct for favourites logic
+  const [favourites, setFavourites] = useState([
+    { name: 'Trail 1', distance: '4 km from me', description: 'A scenic trail with beautiful views.' },
+    { name: 'Trail 2', distance: '7 km from me', description: 'Moderate difficulty, good for a quick hike.' },
+    { name: 'Trail 3', distance: '2 km from me', description: 'Easy walk along the river.' },
+    { name: 'Trail etc', distance: '5 km from me', description: 'Popular spot with picnic areas.' },
+  ]);
 
-  return (
-    <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <MaterialIcons name="arrow-back" size={48} color="#333" />
-        </Pressable>
-        <Text style={styles.heading}>Favourites</Text>
-        <View style={styles.backButton} />
+   return (
+      <View style={styles.container}>
+        {/* Back navigation button */}
+        <View style={styles.headerRow}>
+          <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <MaterialIcons name="arrow-back" size={48} color="#333" />
+          </Pressable>
+          <Text style={styles.heading}>Favourites</Text>
+          <View style={styles.backButton} />
+        </View>
+
+        {/* Box for each saved trail */}
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          {favourites.map((item, index) => (
+            <View key={index} style={[styles.itemBox, { height: itemHeight }]}>
+              {/* Remove Button */}
+              <Pressable
+                style={styles.removeButton}
+                onPress={() => {
+                  const updated = favourites.filter((_, i) => i !== index);
+                  setFavourites(updated);
+                }}
+              >
+                <MaterialIcons name="close" size={36} color="#444" />
+              </Pressable>
+
+              {/* Text Content */}
+              <View style={styles.textContent}>
+                <Text style={styles.itemText}>{item.name}</Text>
+                <Text style={styles.subheadText}>{item.distance}</Text>
+                <Text style={styles.descriptionText}>{item.description}</Text>
+
+                <Pressable style={styles.mapButton} onPress={() => { /* map action */ }}>
+                  <MaterialIcons name="map" size={20} color="white" style={{ marginRight: 8 }} />
+                  <Text style={styles.mapButtonText}>View on Map</Text>
+                </Pressable>
+              </View>
+
+              {/* Image */}
+              <View style={styles.imageContainer}>
+                <View style={styles.placeholderImage}>
+                  <Text style={{ color: '#000' }}>Image</Text>
+                </View>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
       </View>
-
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {favourites.map((item, index) => (
-          <View key={index} style={[styles.itemBox, { height: itemHeight }]}>
-            <Text style={styles.itemText}>{item}</Text>
-          </View>
-        ))}
-      </ScrollView>
-    </View>
-  );
+   );
 }
 
+// styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -58,17 +96,65 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   itemBox: {
+    flexDirection: 'row',
     backgroundColor: '#fff',
     borderRadius: 12,
     marginBottom: 20,
-    padding: 20,
-    justifyContent: 'space-between',
+    padding: 15,
     borderWidth: 1.5,
     borderColor: 'rgba(0, 0, 0, 0.3)',
   },
-
+  textContent: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
   itemText: {
-    fontSize: 20,
-    fontWeight: '600',
+    fontSize: 22,
+    fontWeight: '700',
+  },
+  subheadText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 4,
+  },
+  descriptionText: {
+    fontSize: 14,
+    color: '#444',
+    marginTop: 8,
+    flexShrink: 1,
+  },
+  mapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'green',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 15,
+    marginTop: 10,
+    alignSelf: 'flex-start',
+  },
+  mapButtonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+  imageContainer: {
+   width: 130,
+   height: 130,
+   marginLeft: 15,
+   marginTop: 40,
+   borderRadius: 10,
+   overflow: 'hidden',
+  },
+  placeholderImage: {
+   flex: 1,
+   backgroundColor: '#ccc',
+   justifyContent: 'center',
+   alignItems: 'center',
+  },
+  removeButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 1,
   },
 });

@@ -1,28 +1,81 @@
 import Map from "@/components/Map";
 import { KNOWN_TRAILS } from "@/scripts/data/knownTrails";
+import CurrentConditionsCard from "@/scripts/services/currentConditionsCard";
+import WeatherMultiChart from "@/scripts/services/weatherMultiChart";
 import { MaterialIcons } from "@expo/vector-icons";
-import BottomSheet from "@gorhom/bottom-sheet";
+import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Href, useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import {
   Dimensions,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
-import Svg, { Path } from "react-native-svg";
 
 const { width, height } = Dimensions.get("window");
 
 export default function Index() {
   const router = useRouter();
-  const [isNav, setIsNav] = useState(false);
-  const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ["25%"], []);
-  const [sheetIndex, setSheetIndex] = useState(-1);
 
+  // Bottom sheet ref and control
+  const sheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => ["37%", "100%"], []);
+  const [isSheetExpanded, setIsSheetExpanded] = useState(false);
+  const openSheet = () => {
+    sheetRef.current?.snapToIndex(0);
+  };
+
+  // Example coordinates for Cambridge, UK
+  const CAMBRIDGE_COORDS = {
+    latitude: 52.1951,
+    longitude: 0.1313,
+  };
+
+  // State for current trail
+  const [currentTrail, setcurrentTrail] = useState(CAMBRIDGE_COORDS);
+
+  // State for selected date
+  const [date, setDate] = useState(new Date());
+
+  // State for hourly/daily view
+  const [viewMode, setViewMode] = useState<"hourly" | "daily">("hourly");
+
+  // Controls visibility of date picker
+  const [showPicker, setShowPicker] = useState(false);
+
+  // Set date range for the date picker
+  const minDate = useMemo(() => new Date(), []);
+  const maxDate = useMemo(() => {
+    const max = new Date();
+    max.setDate(max.getDate() + 14);
+    return max;
+  }, []);
+
+  // Format date to button text readable
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  // Handles date change from picker - ios looks better
+  const onChangeDate = (event, selectedDate) => {
+    setShowPicker(Platform.OS === "ios");
+    if (selectedDate) {
+      setDate(selectedDate);
+    }
+  };
+
+  // Navigation lock to prevent rapid presses
+  const [isNav, setIsNav] = useState(false);
+
+  // Prevents rapid-fire navigation
   const handleNav = (path: Href) => {
     if (isNav) return;
     setIsNav(true);
@@ -38,56 +91,115 @@ export default function Index() {
           console.log(`Pressed: ${trail.name} ${trail.score}`)
         }
       />
-
+      {/* Left nav button (Preferences) */}
       <Pressable onPress={() => handleNav("/pref")} style={styles.leftIcon}>
         <MaterialIcons name="menu" size={48} color="#333" />
       </Pressable>
 
+      {/* Right nav button (Favorites) */}
       <Pressable onPress={() => handleNav("/fav")} style={styles.rightIcon}>
-        <Svg
-          width={48}
-          height={48}
-          fill="#F7E88D"
-          stroke="#000"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={1.5}
-          viewBox="0 0 24 24"
-        >
-          <Path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" />
-        </Svg>
-        {/* <Star size={48} color={"#000000"} fill={"#F7E88D"} /> */}
-        {/* <MaterialIcons name="star" size={48} color="#333" /> */}
+        <MaterialIcons name="star" size={48} color="#333" />
       </Pressable>
 
-      <TouchableOpacity
-        onPress={() => setSheetIndex(0)}
-        style={styles.recButton}
-      >
+      {/* Recommend button to trigger bottom sheet on best trail*/}
+      <Pressable onPress={openSheet} style={styles.recButton}>
         <Text style={styles.buttonText}>Recommend</Text>
-      </TouchableOpacity>
-
-      <Pressable onPress={() => setSheetIndex(0)} style={styles.dateButton}>
-        <Text style={styles.buttonText}>Date View</Text>
       </Pressable>
 
+      {/* Date selector */}
+      <Pressable onPress={() => setShowPicker(true)} style={styles.dateButton}>
+        <Text style={styles.buttonText}>Date: {formatDate(date)}</Text>
+      </Pressable>
+
+      {/* Bottom Sheet */}
       <BottomSheet
-        ref={bottomSheetRef}
-        index={sheetIndex}
-        onChange={setSheetIndex}
+        ref={sheetRef}
+        index={-1}
         snapPoints={snapPoints}
         enablePanDownToClose={true}
-        backgroundStyle={{ backgroundColor: "#fffade" }}
+        keyboardBehavior="interactive"
+        enableContentPanningGesture={true}
+        backgroundStyle={{ backgroundColor: "#f0f0f0" }}
+        onChange={(index) => {
+          setIsSheetExpanded(index >= 0);
+        }}
       >
-        <View style={styles.sheetContent}>
-          <Text style={styles.sheetTitle}>More Info</Text>
-          <Text>awdwadawdawdawd</Text>
-        </View>
+        <BottomSheetScrollView contentContainerStyle={{ padding: 20 }}>
+          {/* Sheet header with trail info and image */}
+          <View style={styles.sheetHeader}>
+            <View style={styles.leftSection}>
+              <Text style={styles.sheetTitle}>Trail Name</Text>
+              <Text style={styles.infoText}>Distance: 5.2 km</Text>
+              {/* <Text style={styles.infoText}>Temperature: 23 C</Text>
+              <Text style={styles.infoText}>Wind Speed: 3km/h</Text>
+              <Text style={styles.infoText}>Precipitation: 20mm</Text>
+              <Text style={styles.infoText}>Overall Score: 7/10</Text> */}
+              <View style={styles.graphSection}>
+                <CurrentConditionsCard
+                  latitude={currentTrail.latitude}
+                  longitude={currentTrail.longitude}
+                />
+              </View>
+            </View>
+            <View style={styles.imageContainer}>
+              <View style={styles.placeholderImage}>
+                <Text style={{ color: "#000" }}>Image</Text>
+              </View>
+            </View>
+          </View>
+
+          <Text style={styles.text}>Swipe up for detailed information:</Text>
+
+          <View style={styles.toggleContainer}>
+            <Pressable
+              onPress={() => setViewMode("hourly")}
+              style={[
+                styles.toggleButton,
+                viewMode === "hourly" && styles.activeToggle,
+              ]}
+            >
+              <Text style={styles.toggleText}>Hourly</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setViewMode("daily")}
+              style={[
+                styles.toggleButton,
+                viewMode === "daily" && styles.activeToggle,
+              ]}
+            >
+              <Text style={styles.toggleText}>Daily</Text>
+            </Pressable>
+          </View>
+
+          {/* Graph Section only opens when expanded */}
+          {isSheetExpanded && (
+            <View style={styles.graphSection}>
+              <WeatherMultiChart
+                latitude={CAMBRIDGE_COORDS.latitude} // Replace with actual location or state
+                longitude={CAMBRIDGE_COORDS.longitude}
+                viewMode={viewMode}
+              />
+            </View>
+          )}
+        </BottomSheetScrollView>
       </BottomSheet>
+
+      {/* Date picker functionality */}
+      {showPicker && (
+        <DateTimePicker
+          value={date}
+          mode="date"
+          display="default"
+          onChange={onChangeDate}
+          minimumDate={minDate}
+          maximumDate={maxDate}
+        />
+      )}
     </View>
   );
 }
 
+// styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -108,13 +220,14 @@ const styles = StyleSheet.create({
   recButton: {
     backgroundColor: "green",
     paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingHorizontal: 14,
     borderRadius: 20,
     borderWidth: 1.5,
     justifyContent: "center",
     position: "absolute",
     bottom: height * 0.07,
     left: width * 0.07,
+    minWidth: 100,
   },
   dateButton: {
     backgroundColor: "green",
@@ -129,18 +242,92 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "white",
-    fontSize: 16,
-    minWidth: 120,
+    fontSize: 15,
+    minWidth: 100,
     fontFamily: "JetBrainsMono-Bold",
     textAlign: "center",
   },
-  sheetContent: {
-    padding: 20,
+  text: {
+    fontSize: 14,
+    fontFamily: "JetBrainsMono-Regular",
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 30,
   },
   sheetTitle: {
-    fontSize: 32,
+    fontSize: 24,
     fontFamily: "JetBrainsMono-Bold",
-    textAlign: "center",
     marginBottom: 10,
+    textAlign: "left",
+  },
+  sheetHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  leftSection: {
+    flex: 1,
+  },
+  imageContainer: {
+    width: 140,
+    height: 140,
+    borderWidth: 2,
+    borderColor: "#000",
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 20,
+  },
+  placeholderImage: {
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#ccc",
+  },
+  infoText: {
+    fontSize: 14,
+    fontFamily: "JetBrainsMono-Regular",
+    color: "#333",
+    marginBottom: 4,
+  },
+  graphSection: {
+    marginTop: 10,
+    paddingBottom: 10,
+  },
+  graphBox: {
+    height: 150,
+    backgroundColor: "#e0e0e0",
+    borderRadius: 10,
+    marginBottom: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 2,
+    borderColor: "#999",
+  },
+  toggleContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 16,
+    marginTop: 8,
+  },
+  toggleButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: "#ccc",
+    marginHorizontal: 10,
+  },
+  activeToggle: {
+    backgroundColor: "#4CAF50",
+  },
+  toggleText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
 });

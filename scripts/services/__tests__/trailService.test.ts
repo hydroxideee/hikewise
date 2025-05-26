@@ -1,4 +1,4 @@
-import { findNearestTrails, getTrailInfo } from '../trailService';
+import { findNearestTrails, getTrailImages } from '../trailService';
 
 // Mock fetch globally
 global.fetch = jest.fn();
@@ -75,7 +75,7 @@ describe('trailService', () => {
         })
       );
 
-      const trailInfo = await getTrailInfo(mockTrail);
+      const trailInfo = await getTrailImages(mockTrail);
 
       expect(trailInfo).toHaveProperty('imageUrls');
       expect(trailInfo.imageUrls).toHaveLength(1);
@@ -95,7 +95,7 @@ describe('trailService', () => {
         })
       );
 
-      const trailInfo = await getTrailInfo(mockTrail);
+      const trailInfo = await getTrailImages(mockTrail);
 
       expect(trailInfo).toHaveProperty('imageUrls');
       expect(trailInfo.imageUrls).toHaveLength(0);
@@ -109,7 +109,7 @@ describe('trailService', () => {
         })
       );
 
-      await expect(getTrailInfo(mockTrail)).rejects.toThrow(
+      await expect(getTrailImages(mockTrail)).rejects.toThrow(
         `Could not get place details for trail: ${mockTrail.name}`
       );
     });
