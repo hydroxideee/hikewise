@@ -37,7 +37,7 @@ const EARTH_RADIUS_KM = 6371;
 // Utility functions
 const toRad = (value: number): number => (value * Math.PI) / 180;
 
-const calculateDistance = (
+export const calculateDistance = (
   lat1: number,
   lon1: number,
   lat2: number,
@@ -60,6 +60,7 @@ const fetchPlaceDetails = async (placeId: string): Promise<PlacePhoto[]> => {
   const url = `https://places.googleapis.com/v1/places/${placeId}?fields=id,photos&key=${GOOGLE_API_KEY}`;
   const response = await fetch(url);
   const data: PlacesApiResponse = await response.json();
+  console.log('Place details:', data);
 
   if (!data.result) {
     throw new Error(`Could not get place details for place ID: ${placeId}`);
@@ -67,7 +68,7 @@ const fetchPlaceDetails = async (placeId: string): Promise<PlacePhoto[]> => {
   return data.result.photos || [];
 };
 
-const searchPlace = async (name: string): Promise<{ placeId: string; photoRefs: string[] }> => {
+export const searchPlaceApi = async (name: string): Promise<PlacesApiResponse> => {
   const searchQuery = `${name} trail UK`;
   const encodedQuery = encodeURIComponent(searchQuery);
   const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodedQuery}&key=${GOOGLE_API_KEY}&fields=place_id,photos`;
@@ -84,6 +85,14 @@ const searchPlace = async (name: string): Promise<{ placeId: string; photoRefs: 
     throw new Error(`Could not find place ID for trail: ${name}`);
   }
 
+  return data;
+};
+
+const searchPlace = async (name: string): Promise<{ placeId: string; photoRefs: string[] }> => {
+  const data = await searchPlaceApi(name);
+  if (!data.results?.[0]) {
+    throw new Error(`No results found for trail: ${name}`);
+  }
   const result = data.results[0];
   return {
     placeId: result.place_id,
