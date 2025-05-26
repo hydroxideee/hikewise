@@ -1,4 +1,6 @@
+import { FavoriteSvg } from "@/components/FavoriteSvg";
 import Map from "@/components/Map";
+import { StorageContext } from "@/context/storageContext";
 import { KNOWN_TRAILS, TrailCoordinates } from "@/scripts/data/knownTrails";
 import CurrentConditionsCard from "@/scripts/services/currentConditionsCard";
 import {
@@ -12,7 +14,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import Mapbox from "@rnmapbox/maps";
 import { Image } from "expo-image";
 import { Href, useRouter } from "expo-router";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useContext, useMemo, useRef, useState } from "react";
 import {
   Dimensions,
   Platform,
@@ -26,6 +28,8 @@ const { width, height } = Dimensions.get("window");
 
 export default function Index() {
   const router = useRouter();
+
+  const { favorites, setFavorites } = useContext(StorageContext);
 
   // Bottom sheet ref and control
   const sheetRef = useRef<BottomSheet>(null);
@@ -121,7 +125,7 @@ export default function Index() {
 
       {/* Right nav button (Favorites) */}
       <Pressable onPress={() => handleNav("/fav")} style={styles.rightIcon}>
-        <MaterialIcons name="star" size={48} color="#333" />
+        <FavoriteSvg size={48} active />
       </Pressable>
 
       {/* Recommend button to trigger bottom sheet on best trail*/}
@@ -175,14 +179,32 @@ export default function Index() {
                 />
               </View>
             </View>
-            <View style={styles.imageContainer}>
-              {trailImageUrl ? (
-                <Image source={trailImageUrl} style={styles.trailImage} />
-              ) : (
-                <View style={styles.placeholderImage}>
-                  {/* <Text style={{ color: "#000" }}>Image</Text> */}
-                </View>
-              )}
+            <View style={styles.infoRightSide}>
+              <View style={styles.favoriteBox}>
+                <Pressable
+                  onPress={() =>
+                    setFavorites((prev) =>
+                      favorites.includes(currentTrail.name)
+                        ? prev.filter((n) => n !== currentTrail.name)
+                        : [...prev, currentTrail.name]
+                    )
+                  }
+                >
+                  <FavoriteSvg
+                    size={40}
+                    active={favorites.includes(currentTrail.name)}
+                  />
+                </Pressable>
+              </View>
+              <View style={styles.imageContainer}>
+                {trailImageUrl ? (
+                  <Image source={trailImageUrl} style={styles.trailImage} />
+                ) : (
+                  <View style={styles.placeholderImage}>
+                    {/* <Text style={{ color: "#000" }}>Image</Text> */}
+                  </View>
+                )}
+              </View>
             </View>
           </View>
 
@@ -301,7 +323,7 @@ const styles = StyleSheet.create({
   sheetHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "stretch",
     marginBottom: 20,
   },
   leftSection: {
@@ -314,7 +336,6 @@ const styles = StyleSheet.create({
     borderColor: "#000",
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: 20,
   },
   placeholderImage: {
     width: "100%",
@@ -372,5 +393,23 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     backgroundColor: "#0553",
+  },
+  infoRightSide: {
+    maxWidth: 160,
+    flex: 1,
+    flexDirection: "column",
+    flexGrow: 1,
+    justifyContent: "flex-start",
+
+    gap: 30,
+    alignItems: "flex-end",
+  },
+  favoriteBox: {
+    marginTop: 20,
+    marginLeft: 20,
+    justifyContent: "flex-start",
+    width: 140,
+    alignItems: "center",
+    // marginBottom: 50,
   },
 });
