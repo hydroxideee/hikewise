@@ -1,11 +1,19 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Dimensions, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 const { height } = Dimensions.get('window');
 const HEADER_HEIGHT = 100;
+
+export type WeatherPreferences = {
+  temperature: number;
+  windSpeed: number;
+  precipitation: number;
+  cloudCover: number;
+  uvIndex: number;
+};
 
 export default function PrefScreen() {
   const router = useRouter();
@@ -15,9 +23,18 @@ export default function PrefScreen() {
 
   // Slider labels for different weather preferences
   const sliderLabels = ['Temperature', 'Wind Speed', 'Precipitation', 'Cloud Cover', 'UV Index'];
-  const [sliderValues, setSliderValues] = useState(
-    Object.fromEntries(sliderLabels.map(label => [label, 50]))
-  );
+  const [weatherPreferences, setWeatherPreferences] = useState<WeatherPreferences>({
+    temperature: 50,
+    windSpeed: 50,
+    precipitation: 50,
+    cloudCover: 50,
+    uvIndex: 50
+  });
+
+  // Helper function to convert label to preference key
+  const getPreferenceKey = (label: string): keyof WeatherPreferences => {
+    return label.toLowerCase().replace(' ', '') as keyof WeatherPreferences;
+  };
 
   return (
     <View style={styles.container}>
@@ -44,7 +61,7 @@ export default function PrefScreen() {
           {sliderLabels.map((label, index) => (
             <View key={index} style={styles.sliderGroup}>
               <Text style={styles.sliderLabel}>
-                {label}: {sliderValues[label]}
+                {label}: {weatherPreferences[getPreferenceKey(label)]}
               </Text>
 
               {/* Slider input (individual for each feature) */}
@@ -53,9 +70,12 @@ export default function PrefScreen() {
                 minimumValue={0}
                 maximumValue={100}
                 step={1}
-                value={sliderValues[label]}
+                value={weatherPreferences[getPreferenceKey(label)]}
                 onValueChange={(val) =>
-                  setSliderValues(prev => ({ ...prev, [label]: val }))
+                  setWeatherPreferences(prev => ({
+                    ...prev,
+                    [getPreferenceKey(label)]: val
+                  }))
                 }
                 minimumTrackTintColor="#0a441e"
                 maximumTrackTintColor="#ccc"
