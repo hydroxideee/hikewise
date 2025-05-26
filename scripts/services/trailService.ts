@@ -20,6 +20,12 @@ interface PlacesApiResponse {
   };
   results?: Array<{
     place_id: string;
+    geometry?: {
+      location: {
+        lat: number;
+        lng: number;
+      };
+    };
     photos?: Array<{
       photo_reference: string;
       height: number;
@@ -71,8 +77,8 @@ const fetchPlaceDetails = async (placeId: string): Promise<PlacePhoto[]> => {
 export const searchPlaceApi = async (name: string): Promise<PlacesApiResponse> => {
   const searchQuery = `${name} trail UK`;
   const encodedQuery = encodeURIComponent(searchQuery);
-  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodedQuery}&key=${GOOGLE_API_KEY}&fields=place_id,photos`;
-  console.log('Search URL:', url);
+  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodedQuery}&key=${GOOGLE_API_KEY}&fields=place_id,photos,location`;
+//   console.log('Search URL:', url);
 
   const response = await fetch(url, {
     method: 'GET',
@@ -84,6 +90,7 @@ export const searchPlaceApi = async (name: string): Promise<PlacesApiResponse> =
   if (!data.results?.length) {
     throw new Error(`Could not find place ID for trail: ${name}`);
   }
+  console.log('Search results:', data.results[0].geometry);
 
   return data;
 };
