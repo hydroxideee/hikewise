@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -6,6 +7,10 @@ import Slider from '@react-native-community/slider';
 
 const { height } = Dimensions.get('window');
 const HEADER_HEIGHT = 100;
+const PREF_KEYS = {
+  radius: 'pref_radius',
+  sliders: 'pref_sliders',
+};
 
 export default function PrefScreen() {
   const router = useRouter();
@@ -18,6 +23,37 @@ export default function PrefScreen() {
   const [sliderValues, setSliderValues] = useState(
     Object.fromEntries(sliderLabels.map(label => [label, 50]))
   );
+
+  // Load preferences on start
+  useEffect(() => {
+    const loadPreferences = async () => {
+      try {
+        const storedRadius = await AsyncStorage.getItem(PREF_KEYS.radius);
+        const storedSliders = await AsyncStorage.getItem(PREF_KEYS.sliders);
+
+        if (storedRadius) setRadius(storedRadius);
+        if (storedSliders) setSliderValues(JSON.parse(storedSliders));
+      } catch (e) {
+        console.error('Failed to load preferences', e);
+      }
+    };
+
+    loadPreferences();
+  }, []);
+
+  // Save radius when it changes
+  useEffect(() => {
+    AsyncStorage.setItem(PREF_KEYS.radius, radius).catch((e) =>
+      console.error('Failed to save radius', e)
+    );
+  }, [radius]);
+
+  // Save slider values when they change
+  useEffect(() => {
+    AsyncStorage.setItem(PREF_KEYS.sliders, JSON.stringify(sliderValues)).catch((e) =>
+      console.error('Failed to save sliders', e)
+    );
+  }, [sliderValues]);
 
   return (
     <View style={styles.container}>
@@ -47,7 +83,6 @@ export default function PrefScreen() {
                 {label}: {sliderValues[label]}
               </Text>
 
-              {/* Slider input (individual for each feature) */}
               <Slider
                 style={styles.slider}
                 minimumValue={0}
@@ -68,8 +103,6 @@ export default function PrefScreen() {
         {/* Radius input box */}
         <View style={styles.box}>
           <Text style={styles.pageTitle}>How far away would you like to track (radius)?</Text>
-
-          {/* Numeric text input*/}
           <TextInput
             style={styles.input}
             placeholder="Enter radius in km"
@@ -83,85 +116,3 @@ export default function PrefScreen() {
     </View>
   );
 }
-
-// styles
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fffade',
-  },
-  headerRow: {
-    height: HEADER_HEIGHT,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 40,
-    backgroundColor: '#fffade',
-  },
-  backButton: {
-    width: 40,
-    alignItems: 'center',
-  },
-  heading: {
-    fontSize: 32,
-    fontFamily: 'JetBrainsMono-Bold',
-    textAlign: 'center',
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-  },
-  box: {
-    width: '100%',
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 12,
-    borderColor: 'black',
-    borderWidth: 2,
-    marginBottom: 24,
-    marginTop: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  pageTitle: {
-    fontSize: 22,
-    fontFamily: 'JetBrainsMono-Bold',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  subHeader: {
-    fontSize: 14,
-    fontFamily: 'JetBrainsMono-Regular',
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  sliderGroup: {
-    marginBottom: 6,
-  },
-  sliderLabel: {
-    fontSize: 16,
-    fontFamily: 'JetBrainsMono-Regular',
-    textAlign: 'center',
-    marginBottom: 5,
-  },
-  slider: {
-    width: '100%',
-    height: 40,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#222',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 18,
-    fontFamily: 'JetBrainsMono-Regular',
-    color: '#000',
-    textAlign: 'center',
-  },
-});
