@@ -1,11 +1,10 @@
-import 'react-native-reanimated'; // must be before react and other imports
-import React, { useCallback, useEffect, useState } from 'react';
-import * as Font from 'expo-font';
-import * as SplashScreen from 'expo-splash-screen';
-import { Stack } from 'expo-router';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet } from 'react-native';
-
+import { StorageProvider } from "@/context/storageContext";
+import * as Font from "expo-font";
+import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import React, { useEffect, useState } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import "react-native-reanimated"; // must be before react and other imports
 
 SplashScreen.preventAutoHideAsync();
 
@@ -15,8 +14,8 @@ export default function Layout() {
   useEffect(() => {
     async function loadFonts() {
       await Font.loadAsync({
-        'JetBrainsMono-Regular': require('../assets/fonts/JetBrainsMono-Regular.ttf'),
-        'JetBrainsMono-Bold': require('../assets/fonts/JetBrainsMono-Bold.ttf'),
+        "JetBrainsMono-Regular": require("../assets/fonts/JetBrainsMono-Regular.ttf"),
+        "JetBrainsMono-Bold": require("../assets/fonts/JetBrainsMono-Bold.ttf"),
       });
       setFontsLoaded(true);
       await SplashScreen.hideAsync();
@@ -29,9 +28,10 @@ export default function Layout() {
   }
 
   return (
-      <GestureHandlerRootView>
-            <Stack screenOptions={{ headerShown: false }} />
-      </GestureHandlerRootView>
-    );
+    <GestureHandlerRootView>
+      <StorageProvider>
+        <Stack screenOptions={{ headerShown: false }} />
+      </StorageProvider>
+    </GestureHandlerRootView>
+  );
 }
-

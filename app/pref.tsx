@@ -1,27 +1,42 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
-import Slider from '@react-native-community/slider';
+import { StorageContext } from "@/context/storageContext";
+import { MaterialIcons } from "@expo/vector-icons";
+import Slider from "@react-native-community/slider";
+import { useRouter } from "expo-router";
+import React, { useContext } from "react";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
-const { height } = Dimensions.get('window');
 const HEADER_HEIGHT = 100;
 
 export default function PrefScreen() {
   const router = useRouter();
 
-  // State for radius input (user-defined search radius)
-  const [radius, setRadius] = useState('');
+  const { radius, setRadius, weatherPreferences, setWeatherPreferences } =
+    useContext(StorageContext);
 
-  // Slider labels for different weather preferences
-  const sliderLabels = ['Temperature', 'Wind Speed', 'Precipitation', 'Cloud Cover', 'UV Index'];
-  const [sliderValues, setSliderValues] = useState(
-    Object.fromEntries(sliderLabels.map(label => [label, 50]))
-  );
+  const sliderLabels = [
+    "Temperature",
+    "Wind Speed",
+    "Precipitation",
+    "Cloud Cover",
+    "UV Index",
+  ];
+
+  const getPreferenceKey = (label: string) => {
+    return label
+      .toLowerCase()
+      .replace(" ", "") as keyof typeof weatherPreferences;
+  };
 
   return (
     <View style={styles.container}>
-      {/* Header with back button and title */}
+      {/* Header */}
       <View style={styles.headerRow}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <MaterialIcons name="arrow-back" size={48} color="#333" />
@@ -30,53 +45,60 @@ export default function PrefScreen() {
         <View style={styles.backButton} />
       </View>
 
-      {/* Main scrollable content */}
+      {/* Main content */}
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Sliders box */}
         <View style={styles.box}>
-          <Text style={styles.pageTitle}>What are your ideal weather conditions?</Text>
+          <Text style={styles.pageTitle}>
+            What are your ideal weather conditions?
+          </Text>
           <Text style={styles.subHeader}>(Left to Right = Low to High)</Text>
 
-          {/* Render each slider */}
-          {sliderLabels.map((label, index) => (
-            <View key={index} style={styles.sliderGroup}>
-              <Text style={styles.sliderLabel}>
-                {label}: {sliderValues[label]}
-              </Text>
-
-              {/* Slider input (individual for each feature) */}
-              <Slider
-                style={styles.slider}
-                minimumValue={0}
-                maximumValue={100}
-                step={1}
-                value={sliderValues[label]}
-                onValueChange={(val) =>
-                  setSliderValues(prev => ({ ...prev, [label]: val }))
-                }
-                minimumTrackTintColor="#0a441e"
-                maximumTrackTintColor="#ccc"
-                thumbTintColor="#0a441e"
-              />
-            </View>
-          ))}
+          {sliderLabels.map((label, index) => {
+            const key = getPreferenceKey(label);
+            return (
+              <View key={index} style={styles.sliderGroup}>
+                <Text style={styles.sliderLabel}>
+                  {label}: {weatherPreferences[key]}
+                </Text>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={0}
+                  maximumValue={100}
+                  step={1}
+                  value={weatherPreferences[key]}
+                  onValueChange={(val) =>
+                    setWeatherPreferences((prev) => ({
+                      ...prev,
+                      [key]: val,
+                    }))
+                  }
+                  minimumTrackTintColor="#0a441e"
+                  maximumTrackTintColor="#ccc"
+                  thumbTintColor="#0a441e"
+                />
+              </View>
+            );
+          })}
         </View>
 
-        {/* Radius input box */}
+        {/* Radius */}
         <View style={styles.box}>
-          <Text style={styles.pageTitle}>How far away would you like to track (radius)?</Text>
-
-          {/* Numeric text input*/}
+          <Text style={styles.pageTitle}>
+            How far away would you like to track (radius)?
+          </Text>
           <TextInput
             style={styles.input}
             placeholder="Enter radius in km"
             keyboardType="numeric"
             placeholderTextColor="#999"
-            value={radius}
-            onChangeText={setRadius}
+            value={radius ? radius.toString() : ""}
+            onChangeText={(s) => {
+              const r = Number(s);
+              !isNaN(r) && setRadius(r);
+            }}
           />
         </View>
       </ScrollView>
@@ -88,25 +110,25 @@ export default function PrefScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fffade',
+    backgroundColor: "#fffade",
   },
   headerRow: {
     height: HEADER_HEIGHT,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingTop: 40,
-    backgroundColor: '#fffade',
+    backgroundColor: "#fffade",
   },
   backButton: {
     width: 40,
-    alignItems: 'center',
+    alignItems: "center",
   },
   heading: {
     fontSize: 32,
-    fontFamily: 'JetBrainsMono-Bold',
-    textAlign: 'center',
+    fontFamily: "JetBrainsMono-Bold",
+    textAlign: "center",
     flex: 1,
   },
   scrollContent: {
@@ -114,15 +136,15 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   box: {
-    width: '100%',
-    backgroundColor: 'white',
+    width: "100%",
+    backgroundColor: "white",
     borderRadius: 16,
     padding: 12,
-    borderColor: 'black',
+    borderColor: "black",
     borderWidth: 2,
     marginBottom: 24,
     marginTop: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 10,
@@ -130,15 +152,15 @@ const styles = StyleSheet.create({
   },
   pageTitle: {
     fontSize: 22,
-    fontFamily: 'JetBrainsMono-Bold',
-    textAlign: 'center',
+    fontFamily: "JetBrainsMono-Bold",
+    textAlign: "center",
     marginBottom: 10,
   },
   subHeader: {
     fontSize: 14,
-    fontFamily: 'JetBrainsMono-Regular',
-    color: '#666',
-    textAlign: 'center',
+    fontFamily: "JetBrainsMono-Regular",
+    color: "#666",
+    textAlign: "center",
     marginBottom: 20,
   },
   sliderGroup: {
@@ -146,22 +168,22 @@ const styles = StyleSheet.create({
   },
   sliderLabel: {
     fontSize: 16,
-    fontFamily: 'JetBrainsMono-Regular',
-    textAlign: 'center',
+    fontFamily: "JetBrainsMono-Regular",
+    textAlign: "center",
     marginBottom: 5,
   },
   slider: {
-    width: '100%',
+    width: "100%",
     height: 40,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#222',
+    borderColor: "#222",
     borderRadius: 8,
     padding: 12,
     fontSize: 18,
-    fontFamily: 'JetBrainsMono-Regular',
-    color: '#000',
-    textAlign: 'center',
+    fontFamily: "JetBrainsMono-Regular",
+    color: "#000",
+    textAlign: "center",
   },
 });

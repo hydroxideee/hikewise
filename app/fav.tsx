@@ -1,6 +1,7 @@
+import { StorageContext } from "@/context/storageContext";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useContext } from "react";
 import {
   Dimensions,
   Pressable,
@@ -15,34 +16,15 @@ const itemHeight = screenHeight * 0.3;
 
 export default function FavScreen() {
   const router = useRouter();
+  const { favorites, setFavorites } = useContext(StorageContext);
 
-  // Struct for favourites logic
-  const [favourites, setFavourites] = useState([
-    {
-      name: "Trail 1",
-      distance: "4 km from me",
-      description: "A scenic trail with beautiful views.",
-    },
-    {
-      name: "Trail 2",
-      distance: "7 km from me",
-      description: "Moderate difficulty, good for a quick hike.",
-    },
-    {
-      name: "Trail 3",
-      distance: "2 km from me",
-      description: "Easy walk along the river.",
-    },
-    {
-      name: "Trail etc",
-      distance: "5 km from me",
-      description: "Popular spot with picnic areas.",
-    },
-  ]);
+  const handleRemove = (indexToRemove: number) => {
+    const updated = favorites.filter((_, i) => i !== indexToRemove);
+    setFavorites(updated); // Updates context and AsyncStorage
+  };
 
   return (
     <View style={styles.container}>
-      {/* Back navigation button */}
       <View style={styles.headerRow}>
         <Pressable onPress={() => router.back()} style={styles.backButton}>
           <MaterialIcons name="arrow-back" size={48} color="#333" />
@@ -51,17 +33,13 @@ export default function FavScreen() {
         <View style={styles.backButton} />
       </View>
 
-      {/* Box for each saved trail */}
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {favourites.map((item, index) => (
+        {favorites.map((item: any, index: any) => (
           <View key={index} style={[styles.itemBox, { height: itemHeight }]}>
             {/* Remove Button */}
             <Pressable
               style={styles.removeButton}
-              onPress={() => {
-                const updated = favourites.filter((_, i) => i !== index);
-                setFavourites(updated);
-              }}
+              onPress={() => handleRemove(index)}
             >
               <MaterialIcons name="close" size={36} color="#444" />
             </Pressable>
@@ -75,7 +53,7 @@ export default function FavScreen() {
               <Pressable
                 style={styles.mapButton}
                 onPress={() => {
-                  /* map action */
+                  /* view on map logic */
                 }}
               >
                 <MaterialIcons
@@ -88,10 +66,10 @@ export default function FavScreen() {
               </Pressable>
             </View>
 
-            {/* Image */}
+            {/* Placeholder Image */}
             <View style={styles.imageContainer}>
               <View style={styles.placeholderImage}>
-                {/* <Text style={{ color: '#000' }}>Image</Text> */}
+                <Text style={{ color: "#000" }}>Image</Text>
               </View>
             </View>
           </View>
