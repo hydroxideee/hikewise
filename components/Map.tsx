@@ -48,6 +48,8 @@ const MAP_STYLE_URL = "mapbox://styles/hikewise/cmawz9a9r006w01sdawjq2n4d";
 interface MapProps {
   trails: TrailCoordinates[];
   onTrailSelect: (trail: PointProperties) => void;
+  onMapMoveFromSelectedTrail?: () => void;
+  onCurrentLocationChange: (location: Mapbox.Location) => void;
   favorites?: string[];
 }
 
@@ -56,6 +58,7 @@ export default function Map(props: MapProps) {
   const [currentLocation, setCurrentLocation] =
     useState<Mapbox.Location | null>(null);
   const cameraRef = useRef<Mapbox.Camera>(null);
+  const mapViewRef = useRef<Mapbox.MapView>(null);
 
   useEffect(() => {
     if (Platform.OS === "android") {
@@ -65,7 +68,7 @@ export default function Map(props: MapProps) {
     }
   }, []);
 
-  useEffect(() => {});
+  // useEffect(() => {}, [mapViewRef.current?]);
 
   function onUpdateLocation(location: Mapbox.Location) {
     if (!currentLocation) {
@@ -74,12 +77,14 @@ export default function Map(props: MapProps) {
         zoomLevel: 10,
       });
     }
+    props.onCurrentLocationChange(location);
     setCurrentLocation(location);
   }
 
   return (
     <View style={StyleSheet.absoluteFillObject}>
       <Mapbox.MapView
+        ref={mapViewRef}
         style={styles.map}
         scaleBarEnabled={false}
         styleURL={MAP_STYLE_URL}
