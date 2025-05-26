@@ -1,71 +1,62 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import React, { useState } from 'react';
+import React, { useContext } from 'react';
+import { StorageContext } from '/context/StorageContext';
 
 const screenHeight = Dimensions.get('window').height;
 const itemHeight = screenHeight * 0.3;
 
 export default function FavScreen() {
   const router = useRouter();
+  const { favorites, setFavorites } = useContext(StorageContext);
 
-  // Struct for favourites logic
-  const [favourites, setFavourites] = useState([
-    { name: 'Trail 1', distance: '4 km from me', description: 'A scenic trail with beautiful views.' },
-    { name: 'Trail 2', distance: '7 km from me', description: 'Moderate difficulty, good for a quick hike.' },
-    { name: 'Trail 3', distance: '2 km from me', description: 'Easy walk along the river.' },
-    { name: 'Trail etc', distance: '5 km from me', description: 'Popular spot with picnic areas.' },
-  ]);
+  const handleRemove = (indexToRemove: number) => {
+    const updated = favorites.filter((_, i) => i !== indexToRemove);
+    setFavorites(updated); // Updates context and AsyncStorage
+  };
 
-   return (
-      <View style={styles.container}>
-        {/* Back navigation button */}
-        <View style={styles.headerRow}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
-            <MaterialIcons name="arrow-back" size={48} color="#333" />
-          </Pressable>
-          <Text style={styles.heading}>Favourites</Text>
-          <View style={styles.backButton} />
-        </View>
+  return (
+    <View style={styles.container}>
+      <View style={styles.headerRow}>
+        <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <MaterialIcons name="arrow-back" size={48} color="#333" />
+        </Pressable>
+        <Text style={styles.heading}>Favourites</Text>
+        <View style={styles.backButton} />
+      </View>
 
-        {/* Box for each saved trail */}
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {favourites.map((item, index) => (
-            <View key={index} style={[styles.itemBox, { height: itemHeight }]}>
-              {/* Remove Button */}
-              <Pressable
-                style={styles.removeButton}
-                onPress={() => {
-                  const updated = favourites.filter((_, i) => i !== index);
-                  setFavourites(updated);
-                }}
-              >
-                <MaterialIcons name="close" size={36} color="#444" />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {favorites.map((item, index) => (
+          <View key={index} style={[styles.itemBox, { height: itemHeight }]}>
+            {/* Remove Button */}
+            <Pressable style={styles.removeButton} onPress={() => handleRemove(index)}>
+              <MaterialIcons name="close" size={36} color="#444" />
+            </Pressable>
+
+            {/* Text Content */}
+            <View style={styles.textContent}>
+              <Text style={styles.itemText}>{item.name}</Text>
+              <Text style={styles.subheadText}>{item.distance}</Text>
+              <Text style={styles.descriptionText}>{item.description}</Text>
+
+              <Pressable style={styles.mapButton} onPress={() => {/* view on map logic */}}>
+                <MaterialIcons name="map" size={20} color="white" style={{ marginRight: 8 }} />
+                <Text style={styles.mapButtonText}>View on Map</Text>
               </Pressable>
+            </View>
 
-              {/* Text Content */}
-              <View style={styles.textContent}>
-                <Text style={styles.itemText}>{item.name}</Text>
-                <Text style={styles.subheadText}>{item.distance}</Text>
-                <Text style={styles.descriptionText}>{item.description}</Text>
-
-                <Pressable style={styles.mapButton} onPress={() => { /* map action */ }}>
-                  <MaterialIcons name="map" size={20} color="white" style={{ marginRight: 8 }} />
-                  <Text style={styles.mapButtonText}>View on Map</Text>
-                </Pressable>
-              </View>
-
-              {/* Image */}
-              <View style={styles.imageContainer}>
-                <View style={styles.placeholderImage}>
-                  <Text style={{ color: '#000' }}>Image</Text>
-                </View>
+            {/* Placeholder Image */}
+            <View style={styles.imageContainer}>
+              <View style={styles.placeholderImage}>
+                <Text style={{ color: '#000' }}>Image</Text>
               </View>
             </View>
-          ))}
-        </ScrollView>
-      </View>
-   );
+          </View>
+        ))}
+      </ScrollView>
+    </View>
+  );
 }
 
 // styles
