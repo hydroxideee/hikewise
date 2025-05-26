@@ -1,20 +1,29 @@
-import CurrentConditionsCard from '@/scripts/services/currentConditionsCard';
-import WeatherMultiChart from '@/scripts/services/weatherMultiChart';
-import { MaterialIcons } from '@expo/vector-icons';
-import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { useRouter } from 'expo-router';
-import React, { useMemo, useRef, useState } from 'react';
-import { Dimensions, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import Map from "@/components/Map";
+import { KNOWN_TRAILS } from "@/scripts/data/knownTrails";
+import CurrentConditionsCard from "@/scripts/services/currentConditionsCard";
+import WeatherMultiChart from "@/scripts/services/weatherMultiChart";
+import { MaterialIcons } from "@expo/vector-icons";
+import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Href, useRouter } from "expo-router";
+import React, { useMemo, useRef, useState } from "react";
+import {
+  Dimensions,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 
 export default function Index() {
   const router = useRouter();
 
   // Bottom sheet ref and control
   const sheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ['37%','100%'], []);
+  const snapPoints = useMemo(() => ["37%", "100%"], []);
   const [isSheetExpanded, setIsSheetExpanded] = useState(false);
   const openSheet = () => {
     sheetRef.current?.snapToIndex(0);
@@ -23,18 +32,17 @@ export default function Index() {
   // Example coordinates for Cambridge, UK
   const CAMBRIDGE_COORDS = {
     latitude: 52.1951,
-    longitude: 0.1313
+    longitude: 0.1313,
   };
 
   // State for current trail
-  const [currentTrail, setcurrentTrail] = useState(CAMBRIDGE_COORDS)
-
+  const [currentTrail, setcurrentTrail] = useState(CAMBRIDGE_COORDS);
 
   // State for selected date
   const [date, setDate] = useState(new Date());
 
   // State for hourly/daily view
-  const [viewMode, setViewMode] = useState<'hourly' | 'daily'>('hourly');
+  const [viewMode, setViewMode] = useState<"hourly" | "daily">("hourly");
 
   // Controls visibility of date picker
   const [showPicker, setShowPicker] = useState(false);
@@ -50,17 +58,17 @@ export default function Index() {
   // Format date to button text readable
   const formatDate = (date: Date) => {
     return date.toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   // Handles date change from picker - ios looks better
   const onChangeDate = (event, selectedDate) => {
-      setShowPicker(Platform.OS === 'ios');
+    setShowPicker(Platform.OS === "ios");
     if (selectedDate) {
-        setDate(selectedDate);
+      setDate(selectedDate);
     }
   };
 
@@ -68,7 +76,7 @@ export default function Index() {
   const [isNav, setIsNav] = useState(false);
 
   // Prevents rapid-fire navigation
-  const handleNav = (path: string) => {
+  const handleNav = (path: Href) => {
     if (isNav) return;
     setIsNav(true);
     router.push(path);
@@ -77,13 +85,19 @@ export default function Index() {
 
   return (
     <View style={styles.container}>
+      <Map
+        trails={KNOWN_TRAILS}
+        onTrailSelect={(trail) =>
+          console.log(`Pressed: ${trail.name} ${trail.score}`)
+        }
+      />
       {/* Left nav button (Preferences) */}
-      <Pressable onPress={() => handleNav('/pref')} style={styles.leftIcon}>
+      <Pressable onPress={() => handleNav("/pref")} style={styles.leftIcon}>
         <MaterialIcons name="menu" size={48} color="#333" />
       </Pressable>
 
       {/* Right nav button (Favorites) */}
-      <Pressable onPress={() => handleNav('/fav')} style={styles.rightIcon}>
+      <Pressable onPress={() => handleNav("/fav")} style={styles.rightIcon}>
         <MaterialIcons name="star" size={48} color="#333" />
       </Pressable>
 
@@ -105,7 +119,7 @@ export default function Index() {
         enablePanDownToClose={true}
         keyboardBehavior="interactive"
         enableContentPanningGesture={true}
-        backgroundStyle={{ backgroundColor: '#f0f0f0' }}
+        backgroundStyle={{ backgroundColor: "#f0f0f0" }}
         onChange={(index) => {
           setIsSheetExpanded(index >= 0);
         }}
@@ -121,12 +135,15 @@ export default function Index() {
               <Text style={styles.infoText}>Precipitation: 20mm</Text>
               <Text style={styles.infoText}>Overall Score: 7/10</Text> */}
               <View style={styles.graphSection}>
-                <CurrentConditionsCard latitude={currentTrail.latitude} longitude={currentTrail.longitude} />
+                <CurrentConditionsCard
+                  latitude={currentTrail.latitude}
+                  longitude={currentTrail.longitude}
+                />
               </View>
             </View>
             <View style={styles.imageContainer}>
               <View style={styles.placeholderImage}>
-                <Text style={{ color: '#000' }}>Image</Text>
+                <Text style={{ color: "#000" }}>Image</Text>
               </View>
             </View>
           </View>
@@ -135,14 +152,20 @@ export default function Index() {
 
           <View style={styles.toggleContainer}>
             <Pressable
-              onPress={() => setViewMode('hourly')}
-              style={[styles.toggleButton, viewMode === 'hourly' && styles.activeToggle]}
+              onPress={() => setViewMode("hourly")}
+              style={[
+                styles.toggleButton,
+                viewMode === "hourly" && styles.activeToggle,
+              ]}
             >
               <Text style={styles.toggleText}>Hourly</Text>
             </Pressable>
             <Pressable
-              onPress={() => setViewMode('daily')}
-              style={[styles.toggleButton, viewMode === 'daily' && styles.activeToggle]}
+              onPress={() => setViewMode("daily")}
+              style={[
+                styles.toggleButton,
+                viewMode === "daily" && styles.activeToggle,
+              ]}
             >
               <Text style={styles.toggleText}>Daily</Text>
             </Pressable>
@@ -180,65 +203,67 @@ export default function Index() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fffade',
+    backgroundColor: "#fffade",
   },
   leftIcon: {
     padding: 10,
-    position: 'absolute',
+    position: "absolute",
     top: height * 0.04,
     left: width * 0.05,
   },
   rightIcon: {
     padding: 10,
-    position: 'absolute',
+    position: "absolute",
     top: height * 0.04,
     right: width * 0.05,
   },
   recButton: {
-    backgroundColor: 'green',
+    backgroundColor: "green",
     paddingVertical: 12,
     paddingHorizontal: 14,
     borderRadius: 20,
-    justifyContent: 'center',
-    position: 'absolute',
+    borderWidth: 1.5,
+    justifyContent: "center",
+    position: "absolute",
     bottom: height * 0.07,
     left: width * 0.07,
     minWidth: 100,
   },
   dateButton: {
-    backgroundColor: 'green',
+    backgroundColor: "green",
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 20,
-    justifyContent: 'center',
-    position: 'absolute',
+    borderWidth: 1.5,
+    justifyContent: "center",
+    position: "absolute",
     bottom: height * 0.07,
     right: width * 0.07,
   },
   buttonText: {
-    color: 'white',
+    color: "white",
     fontSize: 15,
     minWidth: 100,
-    fontFamily: 'JetBrainsMono-Bold',
-    textAlign: 'center',
+    fontFamily: "JetBrainsMono-Bold",
+    textAlign: "center",
   },
   text: {
     fontSize: 14,
-    fontFamily: 'JetBrainsMono-Regular',
-    color: '#666',
-    textAlign: 'center',
+    fontFamily: "JetBrainsMono-Regular",
+    color: "#666",
+    textAlign: "center",
     marginBottom: 30,
   },
   sheetTitle: {
     fontSize: 24,
-    fontFamily: 'JetBrainsMono-Bold',
+    fontFamily: "JetBrainsMono-Bold",
     marginBottom: 10,
-    textAlign: 'left',
+    textAlign: "left",
   },
   sheetHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 20,
   },
   leftSection: {
@@ -248,22 +273,22 @@ const styles = StyleSheet.create({
     width: 140,
     height: 140,
     borderWidth: 2,
-    borderColor: '#000',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: "#000",
+    justifyContent: "center",
+    alignItems: "center",
     marginLeft: 20,
   },
   placeholderImage: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#ccc',
+    width: "100%",
+    height: "100%",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#ccc",
   },
   infoText: {
     fontSize: 14,
-    fontFamily: 'JetBrainsMono-Regular',
-    color: '#333',
+    fontFamily: "JetBrainsMono-Regular",
+    color: "#333",
     marginBottom: 4,
   },
   graphSection: {
@@ -272,37 +297,37 @@ const styles = StyleSheet.create({
   },
   graphBox: {
     height: 150,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: "#e0e0e0",
     borderRadius: 10,
     marginBottom: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
     borderWidth: 2,
-    borderColor: '#999',
+    borderColor: "#999",
   },
   toggleContainer: {
-  flexDirection: 'row',
-  justifyContent: 'center',
-  marginBottom: 16,
-  marginTop: 8,
+    flexDirection: "row",
+    justifyContent: "center",
+    marginBottom: 16,
+    marginTop: 8,
   },
   toggleButton: {
     paddingVertical: 8,
     paddingHorizontal: 20,
     borderRadius: 20,
-    backgroundColor: '#ccc',
+    backgroundColor: "#ccc",
     marginHorizontal: 10,
   },
   activeToggle: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
   },
   toggleText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
   },
 });
