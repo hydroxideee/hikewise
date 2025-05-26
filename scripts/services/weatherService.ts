@@ -167,7 +167,7 @@ export class WeatherService {
   async getDailyForecast(
     latitude: number,
     longitude: number,
-    days: number = 7
+    days: number = 10
   ): Promise<WeatherResponse[]> {
     try {
       const params = new URLSearchParams({
@@ -175,6 +175,7 @@ export class WeatherService {
         'location.latitude': latitude.toString(),
         'location.longitude': longitude.toString(),
         days: Math.min(days, 10).toString(), // API limit is 10 days
+        pageSize: '10'
       });
 
       return await this.fetchWeatherData<WeatherResponse[]>('forecast/days:lookup', params);
