@@ -1,12 +1,16 @@
 import Map from "@/components/Map";
 import { KNOWN_TRAILS, TrailCoordinates } from "@/scripts/data/knownTrails";
 import CurrentConditionsCard from "@/scripts/services/currentConditionsCard";
-import { calculateDistance } from "@/scripts/services/trailService";
+import {
+  calculateDistance,
+  getTrailImages,
+} from "@/scripts/services/trailService";
 import WeatherMultiChart from "@/scripts/services/weatherMultiChart";
 import { MaterialIcons } from "@expo/vector-icons";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Mapbox from "@rnmapbox/maps";
+import { Image } from "expo-image";
 import { Href, useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import {
@@ -51,6 +55,8 @@ export default function Index() {
   const [currentLocation, setCurrentLocation] =
     useState<Mapbox.Location | null>(null);
 
+  const [trailImageUrl, setTrailImageUrl] = useState<string | null>(null);
+
   // Set date range for the date picker
   const minDate = useMemo(() => new Date(), []);
   const maxDate = useMemo(() => {
@@ -94,6 +100,12 @@ export default function Index() {
         onTrailSelect={(trail) => {
           console.log(`Pressed: ${trail.name} ${trail.score}`);
           setCurrentTrail(trail);
+          setTrailImageUrl(null);
+          getTrailImages(trail).then((t) => {
+            const imageUrl = t.imageUrls[0];
+            console.log(imageUrl);
+            setTrailImageUrl(imageUrl);
+          });
           openSheet();
         }}
         onCurrentLocationChange={(location: Mapbox.Location) =>
@@ -162,9 +174,13 @@ export default function Index() {
               </View>
             </View>
             <View style={styles.imageContainer}>
-              <View style={styles.placeholderImage}>
-                <Text style={{ color: "#000" }}>Image</Text>
-              </View>
+              {trailImageUrl ? (
+                <Image source={trailImageUrl} style={styles.trailImage} />
+              ) : (
+                <View style={styles.placeholderImage}>
+                  {/* <Text style={{ color: "#000" }}>Image</Text> */}
+                </View>
+              )}
             </View>
           </View>
 
@@ -349,5 +365,10 @@ const styles = StyleSheet.create({
   toggleText: {
     color: "#fff",
     fontWeight: "bold",
+  },
+  trailImage: {
+    flex: 1,
+    width: "100%",
+    backgroundColor: "#0553",
   },
 });

@@ -1,4 +1,3 @@
-import { GOOGLE_API_KEY } from '@env';
 
 // Types
 interface WeatherCondition {
@@ -102,7 +101,7 @@ export interface WeatherResponse {
 }
 
 export class WeatherService {
-  private readonly apiKey = GOOGLE_API_KEY;
+  private readonly apiKey = process.env.EXPO_PUBLIC_GOOGLE_API_KEY as string;
   private readonly baseUrl = 'https://weather.googleapis.com/v1';
 
   // Fetch weather data from the API
@@ -119,12 +118,13 @@ export class WeatherService {
    */
   async getCurrentConditions(latitude: number, longitude: number): Promise<WeatherResponse> {
     try {
-      const params = new URLSearchParams({
+      const p = {
         key: this.apiKey,
         'location.latitude': latitude.toString(),
         'location.longitude': longitude.toString(),
-      });
-      
+      }
+
+      const params = new URLSearchParams(p);
       return await this.fetchWeatherData<WeatherResponse>('currentConditions:lookup', params);
     } catch (error: unknown) {
       if (error instanceof Error) {
