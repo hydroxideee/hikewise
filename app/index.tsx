@@ -1,10 +1,12 @@
 import Map from "@/components/Map";
-import { KNOWN_TRAILS } from "@/scripts/data/knownTrails";
+import { KNOWN_TRAILS, TrailCoordinates } from "@/scripts/data/knownTrails";
 import CurrentConditionsCard from "@/scripts/services/currentConditionsCard";
+import { calculateDistance } from "@/scripts/services/trailService";
 import WeatherMultiChart from "@/scripts/services/weatherMultiChart";
 import { MaterialIcons } from "@expo/vector-icons";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import Mapbox from "@rnmapbox/maps";
 import { Href, useRouter } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import {
@@ -28,15 +30,14 @@ export default function Index() {
   const openSheet = () => {
     sheetRef.current?.snapToIndex(0);
   };
-
-  // Example coordinates for Cambridge, UK
-  const CAMBRIDGE_COORDS = {
-    latitude: 52.1951,
-    longitude: 0.1313,
+  const closeSheet = () => {
+    sheetRef.current?.snapToIndex(-1);
   };
 
   // State for current trail
-  const [currentTrail, setcurrentTrail] = useState(CAMBRIDGE_COORDS);
+  const [currentTrail, setCurrentTrail] = useState<TrailCoordinates>(
+    KNOWN_TRAILS[0]
+  );
 
   // State for selected date
   const [date, setDate] = useState(new Date());
@@ -47,11 +48,14 @@ export default function Index() {
   // Controls visibility of date picker
   const [showPicker, setShowPicker] = useState(false);
 
+  const [currentLocation, setCurrentLocation] =
+    useState<Mapbox.Location | null>(null);
+
   // Set date range for the date picker
   const minDate = useMemo(() => new Date(), []);
   const maxDate = useMemo(() => {
     const max = new Date();
-    max.setDate(max.getDate() + 14);
+    max.setDate(max.getDate() + 9);
     return max;
   }, []);
 
@@ -65,7 +69,7 @@ export default function Index() {
   };
 
   // Handles date change from picker - ios looks better
-  const onChangeDate = (event, selectedDate) => {
+  const onChangeDate = (event: any, selectedDate: any) => {
     setShowPicker(Platform.OS === "ios");
     if (selectedDate) {
       setDate(selectedDate);
@@ -87,8 +91,13 @@ export default function Index() {
     <View style={styles.container}>
       <Map
         trails={KNOWN_TRAILS}
-        onTrailSelect={(trail) =>
-          console.log(`Pressed: ${trail.name} ${trail.score}`)
+        onTrailSelect={(trail) => {
+          console.log(`Pressed: ${trail.name} ${trail.score}`);
+          setCurrentTrail(trail);
+          openSheet();
+        }}
+        onCurrentLocationChange={(location: Mapbox.Location) =>
+          setCurrentLocation(location)
         }
       />
       {/* Left nav button (Preferences) */}
@@ -102,7 +111,7 @@ export default function Index() {
       </Pressable>
 
       {/* Recommend button to trigger bottom sheet on best trail*/}
-      <Pressable onPress={openSheet} style={styles.recButton}>
+      <Pressable style={styles.recButton}>
         <Text style={styles.buttonText}>Recommend</Text>
       </Pressable>
 
@@ -128,8 +137,19 @@ export default function Index() {
           {/* Sheet header with trail info and image */}
           <View style={styles.sheetHeader}>
             <View style={styles.leftSection}>
-              <Text style={styles.sheetTitle}>Trail Name</Text>
-              <Text style={styles.infoText}>Distance: 5.2 km</Text>
+              <Text style={styles.sheetTitle}>{currentTrail.name}</Text>
+              <Text style={styles.infoText}>
+                Distance:{" "}
+                {currentLocation?.coords
+                  ? calculateDistance(
+                      currentLocation?.coords.latitude,
+                      currentLocation?.coords.longitude,
+                      currentTrail.latitude,
+                      currentTrail.longitude
+                    ).toFixed(1)
+                  : "..."}{" "}
+                km
+              </Text>
               {/* <Text style={styles.infoText}>Temperature: 23 C</Text>
               <Text style={styles.infoText}>Wind Speed: 3km/h</Text>
               <Text style={styles.infoText}>Precipitation: 20mm</Text>
@@ -175,8 +195,8 @@ export default function Index() {
           {isSheetExpanded && (
             <View style={styles.graphSection}>
               <WeatherMultiChart
-                latitude={CAMBRIDGE_COORDS.latitude} // Replace with actual location or state
-                longitude={CAMBRIDGE_COORDS.longitude}
+                latitude={currentTrail.latitude} // Replace with actual location or state
+                longitude={currentTrail.longitude}
                 viewMode={viewMode}
               />
             </View>

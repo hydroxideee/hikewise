@@ -43,3 +43,7 @@ app-example
 # extra files
 *.pdf
 package-lock.json
+
+.env
+.idea
+.vscode
