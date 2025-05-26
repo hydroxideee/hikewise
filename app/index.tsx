@@ -1,9 +1,11 @@
-import React, { useState, useMemo, useRef } from 'react';
-import { View, StyleSheet, Pressable, Text, Dimensions, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
+import CurrentConditionsCard from '@/scripts/services/currentConditionsCard';
+import WeatherMultiChart from '@/scripts/services/weatherMultiChart';
 import { MaterialIcons } from '@expo/vector-icons';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useRouter } from 'expo-router';
+import React, { useMemo, useRef, useState } from 'react';
+import { Dimensions, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -18,9 +20,21 @@ export default function Index() {
     sheetRef.current?.snapToIndex(0);
   };
 
+  // Example coordinates for Cambridge, UK
+  const CAMBRIDGE_COORDS = {
+    latitude: 52.1951,
+    longitude: 0.1313
+  };
+
+  // State for current trail
+  const [currentTrail, setcurrentTrail] = useState(CAMBRIDGE_COORDS)
+
 
   // State for selected date
   const [date, setDate] = useState(new Date());
+
+  // State for hourly/daily view
+  const [viewMode, setViewMode] = useState<'hourly' | 'daily'>('hourly');
 
   // Controls visibility of date picker
   const [showPicker, setShowPicker] = useState(false);
@@ -102,10 +116,13 @@ export default function Index() {
             <View style={styles.leftSection}>
               <Text style={styles.sheetTitle}>Trail Name</Text>
               <Text style={styles.infoText}>Distance: 5.2 km</Text>
-              <Text style={styles.infoText}>Temperature: 23 C</Text>
+              {/* <Text style={styles.infoText}>Temperature: 23 C</Text>
               <Text style={styles.infoText}>Wind Speed: 3km/h</Text>
               <Text style={styles.infoText}>Precipitation: 20mm</Text>
-              <Text style={styles.infoText}>Overall Score: 7/10</Text>
+              <Text style={styles.infoText}>Overall Score: 7/10</Text> */}
+              <View style={styles.graphSection}>
+                <CurrentConditionsCard latitude={currentTrail.latitude} longitude={currentTrail.longitude} />
+              </View>
             </View>
             <View style={styles.imageContainer}>
               <View style={styles.placeholderImage}>
@@ -115,13 +132,30 @@ export default function Index() {
           </View>
 
           <Text style={styles.text}>Swipe up for detailed information:</Text>
+
+          <View style={styles.toggleContainer}>
+            <Pressable
+              onPress={() => setViewMode('hourly')}
+              style={[styles.toggleButton, viewMode === 'hourly' && styles.activeToggle]}
+            >
+              <Text style={styles.toggleText}>Hourly</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setViewMode('daily')}
+              style={[styles.toggleButton, viewMode === 'daily' && styles.activeToggle]}
+            >
+              <Text style={styles.toggleText}>Daily</Text>
+            </Pressable>
+          </View>
+
           {/* Graph Section only opens when expanded */}
           {isSheetExpanded && (
             <View style={styles.graphSection}>
-              <View style={styles.graphBox}><Text>Graph 1</Text></View>
-              <View style={styles.graphBox}><Text>Graph 2</Text></View>
-              <View style={styles.graphBox}><Text>Graph 3</Text></View>
-              <View style={styles.graphBox}><Text>Graph 4</Text></View>
+              <WeatherMultiChart
+                latitude={CAMBRIDGE_COORDS.latitude} // Replace with actual location or state
+                longitude={CAMBRIDGE_COORDS.longitude}
+                viewMode={viewMode}
+              />
             </View>
           )}
         </BottomSheetScrollView>
@@ -233,8 +267,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   graphSection: {
-    marginTop: 30,
-    paddingBottom: 60,
+    marginTop: 10,
+    paddingBottom: 10,
   },
   graphBox: {
     height: 150,
@@ -250,5 +284,25 @@ const styles = StyleSheet.create({
     elevation: 3,
     borderWidth: 2,
     borderColor: '#999',
+  },
+  toggleContainer: {
+  flexDirection: 'row',
+  justifyContent: 'center',
+  marginBottom: 16,
+  marginTop: 8,
+  },
+  toggleButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: '#ccc',
+    marginHorizontal: 10,
+  },
+  activeToggle: {
+    backgroundColor: '#4CAF50',
+  },
+  toggleText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });
