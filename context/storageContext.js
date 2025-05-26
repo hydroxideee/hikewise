@@ -1,80 +1,54 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export const storageContext = createContext();
+export const StorageContext = createContext<any>(null);
 
-const PREF_KEYS = {
-  radius: 'pref_radius',
-  sliders: 'pref_sliders',
-  favorites: 'favorites',
-};
-
-export const storageProvider = ({ children }) => {
-  const [radius, setRadius] = useState('');
-  const [sliderValues, setSliderValues] = useState({
-    Temperature: 50,
-    'Wind Speed': 50,
-    Precipitation: 50,
-    'Cloud Cover': 50,
-    'UV Index': 50,
+export const StorageProvider = ({ children }: { children: React.ReactNode }) => {
+  const [radius, setRadiusState] = useState('');
+  const [weatherPreferences, setWeatherPreferencesState] = useState({
+    temperature: 50,
+    windSpeed: 50,
+    precipitation: 50,
+    cloudCover: 50,
+    uvIndex: 50
   });
+  const [favorites, setFavorites] = useState<string[]>([]);
 
-  const [favorites, setFavorites] = useState([]);
-
-  // Load on mount
+  // Load preferences from storage
   useEffect(() => {
-    const loadStorage = async () => {
-      try {
-        const storedRadius = await AsyncStorage.getItem(PREF_KEYS.radius);
-        const storedSliders = await AsyncStorage.getItem(PREF_KEYS.sliders);
-        const storedFavorites = await AsyncStorage.getItem(PREF_KEYS.favorites);
+    (async () => {
+      const r = await AsyncStorage.getItem('pref_radius');
+      const wp = await AsyncStorage.getItem('pref_sliders');
+      const favs = await AsyncStorage.getItem('favorites');
 
-        if (storedRadius) setRadius(storedRadius);
-        if (storedSliders) setSliderValues(JSON.parse(storedSliders));
-        if (storedFavorites) setFavorites(JSON.parse(storedFavorites));
-      } catch (e) {
-        console.error('Failed to load preferences:', e);
-      }
-    };
-
-    loadStorage();
+      if (r) setRadiusState(r);
+      if (wp) setWeatherPreferencesState(JSON.parse(wp));
+      if (favs) setFavorites(JSON.parse(favs));
+    })();
   }, []);
 
-  // Save when updated
+  // Save on changes
   useEffect(() => {
-    AsyncStorage.setItem(PREF_KEYS.radius, radius).catch(console.error);
+    AsyncStorage.setItem('pref_radius', radius);
   }, [radius]);
 
   useEffect(() => {
-    AsyncStorage.setItem(PREF_KEYS.sliders, JSON.stringify(sliderValues)).catch(console.error);
-  }, [sliderValues]);
+    AsyncStorage.setItem('pref_sliders', JSON.stringify(weatherPreferences));
+  }, [weatherPreferences]);
 
   useEffect(() => {
-    AsyncStorage.setItem(PREF_KEYS.favorites, JSON.stringify(favorites)).catch(console.error);
+    AsyncStorage.setItem('favorites', JSON.stringify(favorites));
   }, [favorites]);
-
-  // Add/remove favorite helpers
-  const addFavorite = (item) => {
-    setFavorites(prev => {
-      const updated = [...prev, item];
-      return [...new Set(updated.map(JSON.stringify))].map(JSON.parse); // ensure uniqueness
-    });
-  };
-
-  const removeFavorite = (item) => {
-    setFavorites(prev => prev.filter(fav => fav.id !== item.id));
-  };
 
   return (
     <StorageContext.Provider
       value={{
         radius,
-        setRadius,
-        sliderValues,
-        setSliderValues,
+        setRadius: setRadiusState,
+        weatherPreferences,
+        setWeatherPreferences: setWeatherPreferencesState,
         favorites,
-        addFavorite,
-        removeFavorite,
+        setFavorites,
       }}
     >
       {children}
