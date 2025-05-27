@@ -1,10 +1,10 @@
+import { MapContext } from "@/context/mapContext";
 import { StorageContext } from "@/context/storageContext";
 import { KNOWN_TRAILS, TrailCoordinates } from "@/scripts/data/knownTrails";
 import { calculateDistance } from "@/scripts/services/trailService";
 import { MaterialIcons } from "@expo/vector-icons";
-import * as Location from "expo-location";
 import { useRouter } from "expo-router";
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useMemo } from "react";
 import {
   Dimensions,
   Pressable,
@@ -20,25 +20,30 @@ const itemHeight = screenHeight * 0.3;
 export default function FavScreen() {
   const router = useRouter();
   const { favorites, setFavorites } = useContext(StorageContext);
-  const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
+  const {
+    targetCoordinates,
+    setTargetCoordinates,
+    currentLocation,
+    setCurrentLocation,
+  } = useContext(MapContext);
 
-  // Get current location
-  useEffect(() => {
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        return;
-      }
+  // // Get current location
+  // useEffect(() => {
+  //   (async () => {
+  //     const { status } = await Location.requestForegroundPermissionsAsync();
+  //     if (status !== 'granted') {
+  //       return;
+  //     }
 
-      const location = await Location.getCurrentPositionAsync({});
-      setCurrentLocation(location);
-    })();
-  }, []);
+  //     const location = await Location.getCurrentPositionAsync({});
+  //     setCurrentLocation(location);
+  //   })();
+  // }, []);
 
   // Look up full trail information for each favorite name
   const favoriteTrails = useMemo(() => {
     return favorites
-      .map(name => KNOWN_TRAILS.find(trail => trail.name === name))
+      .map((name) => KNOWN_TRAILS.find((trail) => trail.name === name))
       .filter((trail): trail is TrailCoordinates => trail !== undefined);
   }, [favorites]);
 
@@ -72,21 +77,21 @@ export default function FavScreen() {
             <View style={styles.textContent}>
               <Text style={styles.itemText}>{trail.name}</Text>
               <Text style={styles.subheadText}>
-                {currentLocation ? 
-                  `Distance: ${calculateDistance(
-                    currentLocation.coords.latitude,
-                    currentLocation.coords.longitude,
-                    trail.latitude,
-                    trail.longitude
-                  ).toFixed(1)} km` :
-                  "Loading distance..."
-                }
+                {currentLocation
+                  ? `Distance: ${calculateDistance(
+                      currentLocation.coords.latitude,
+                      currentLocation.coords.longitude,
+                      trail.latitude,
+                      trail.longitude
+                    ).toFixed(1)} km`
+                  : "Loading distance..."}
               </Text>
 
               <Pressable
                 style={styles.mapButton}
                 onPress={() => {
-                  /* view on map logic */
+                  setTargetCoordinates([trail.longitude, trail.latitude]);
+                  router.back();
                 }}
               >
                 <MaterialIcons

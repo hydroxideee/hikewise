@@ -1,5 +1,6 @@
 import { FavoriteSvg } from "@/components/FavoriteSvg";
 import MapDisplay, { TrailWithScore } from "@/components/Map";
+import { MapContext } from "@/context/mapContext";
 import { StorageContext } from "@/context/storageContext";
 import { KNOWN_TRAILS, TrailCoordinates } from "@/scripts/data/knownTrails";
 import CurrentConditionsCard from "@/scripts/services/currentConditionsCard";
@@ -46,9 +47,16 @@ export default function Index() {
   const { favorites, setFavorites, weatherPreferences, radius } =
     useContext(StorageContext);
 
-  const [targetCoordinates, setTargetCoordinates] = useState<
-    number[] | undefined
-  >();
+  const {
+    targetCoordinates,
+    setTargetCoordinates,
+    currentLocation,
+    setCurrentLocation,
+  } = useContext(MapContext);
+
+  // const [targetCoordinates, setTargetCoordinates] = useState<
+  //   number[] | undefined
+  // >();
 
   // Bottom sheet ref and control
   const sheetRef = useRef<BottomSheet>(null);
@@ -135,9 +143,6 @@ export default function Index() {
 
   // Controls visibility of date picker
   const [showPicker, setShowPicker] = useState(false);
-
-  const [currentLocation, setCurrentLocation] =
-    useState<Mapbox.Location | null>(null);
 
   const [trailImageUrl, setTrailImageUrl] = useState<string | null>(null);
 

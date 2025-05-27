@@ -1,3 +1,4 @@
+import { MapProvider } from "@/context/mapContext";
 import { StorageProvider } from "@/context/storageContext";
 import * as Font from "expo-font";
 import { Stack } from "expo-router";
@@ -30,7 +31,9 @@ export default function Layout() {
   return (
     <GestureHandlerRootView>
       <StorageProvider>
-        <Stack screenOptions={{ headerShown: false }} />
+        <MapProvider>
+          <Stack screenOptions={{ headerShown: false }} />
+        </MapProvider>
       </StorageProvider>
     </GestureHandlerRootView>
   );

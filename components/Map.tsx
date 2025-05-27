@@ -1,9 +1,10 @@
 import { PermissionsAndroid, Platform, StyleSheet, View } from "react-native";
 
+import { MapContext } from "@/context/mapContext";
 import { TrailCoordinates } from "@/scripts/data/knownTrails";
 import Mapbox from "@rnmapbox/maps";
 import type { FeatureCollection, Point } from "geojson";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 
 export type TrailWithScore = TrailCoordinates & {
   score: number;
@@ -56,8 +57,7 @@ interface MapProps {
 
 export default function Map(props: MapProps) {
   const [mapReady, setMapReady] = useState(false);
-  const [currentLocation, setCurrentLocation] =
-    useState<Mapbox.Location | null>(null);
+  const { currentLocation, setCurrentLocation } = useContext(MapContext);
   const cameraRef = useRef<Mapbox.Camera>(null);
   const mapViewRef = useRef<Mapbox.MapView>(null);
 
@@ -86,7 +86,7 @@ export default function Map(props: MapProps) {
         zoomLevel: 10,
       });
     }
-    props.onCurrentLocationChange?.(location);
+    //props.onCurrentLocationChange?.(location);
     setCurrentLocation(location);
   }
 
