@@ -1,5 +1,5 @@
 import { FavoriteSvg } from "@/components/FavoriteSvg";
-import Map from "@/components/Map";
+import MapDisplay, { TrailWithScore } from "@/components/Map";
 import { StorageContext } from "@/context/storageContext";
 import { KNOWN_TRAILS, TrailCoordinates } from "@/scripts/data/knownTrails";
 import CurrentConditionsCard from "@/scripts/services/currentConditionsCard";
@@ -8,13 +8,26 @@ import {
   getTrailImages,
 } from "@/scripts/services/trailService";
 import WeatherMultiChart from "@/scripts/services/weatherMultiChart";
+import {
+  getScore,
+  WeatherResponse,
+  WeatherService,
+} from "@/scripts/services/weatherService";
 import { MaterialIcons } from "@expo/vector-icons";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Mapbox from "@rnmapbox/maps";
 import { Image } from "expo-image";
 import { Href, useRouter } from "expo-router";
-import React, { useContext, useMemo, useRef, useState } from "react";
+import debounce from "lodash.debounce";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Dimensions,
   Platform,
@@ -29,7 +42,12 @@ const { width, height } = Dimensions.get("window");
 export default function Index() {
   const router = useRouter();
 
-  const { favorites, setFavorites } = useContext(StorageContext);
+  const { favorites, setFavorites, weatherPreferences } =
+    useContext(StorageContext);
+
+  const [targetCoordinates, setTargetCoordinates] = useState<
+    number[] | undefined
+  >();
 
   // Bottom sheet ref and control
   const sheetRef = useRef<BottomSheet>(null);
@@ -50,6 +68,59 @@ export default function Index() {
 
   // State for selected date
   const [date, setDate] = useState(new Date());
+
+  const [trailsWithScores, setTrailsWithScores] = useState<TrailWithScore[]>(
+    []
+  );
+
+  const [currentWeatherMap, setCurrentWeatherMap] = useState<
+    Map<string, WeatherResponse>
+  >(new Map());
+
+  function updateCurrentWeatherMap(key: string, value: WeatherResponse) {
+    console.log(2, currentWeatherMap.entries.length);
+    setCurrentWeatherMap((prev) => {
+      const newMap = new Map(prev);
+      newMap.set(key, value);
+      return newMap;
+    });
+  }
+
+  const weatherService = new WeatherService();
+
+  useEffect(() => {
+    const promises = KNOWN_TRAILS.map((trail) => {
+      weatherService
+        .getCurrentConditions(trail.latitude, trail.longitude)
+        .then((r) => updateCurrentWeatherMap(trail.name, r));
+    });
+    Promise.all(promises);
+  }, [KNOWN_TRAILS, date]);
+
+  function updateScores() {
+    setTrailsWithScores(
+      KNOWN_TRAILS.map((trail) => {
+        const weather = currentWeatherMap.get(trail.name);
+        if (weather !== undefined) {
+          const score = getScore(weather, weatherPreferences);
+          console.log(trail.name, score);
+          return { ...trail, score: getScore(weather, weatherPreferences) };
+        }
+      }).filter((t) => t !== undefined)
+    );
+  }
+
+  const debouncedUpdateScore = useMemo(
+    () => debounce(updateScores, 100),
+    [KNOWN_TRAILS]
+  );
+
+  const updateScore = useCallback(() => {
+    console.log(1);
+    debouncedUpdateScore();
+  }, [debouncedUpdateScore]);
+
+  useEffect(updateScore, [currentWeatherMap, weatherPreferences]);
 
   // State for hourly/daily view
   const [viewMode, setViewMode] = useState<"hourly" | "daily">("hourly");
@@ -95,13 +166,15 @@ export default function Index() {
     if (isNav) return;
     setIsNav(true);
     router.push(path);
-    setTimeout(() => setIsNav(false), 500);
+    setTimeout(() => setIsNav(false), 50);
   };
 
   return (
     <View style={styles.container}>
-      <Map
-        trails={KNOWN_TRAILS}
+      <MapDisplay
+        trails={trailsWithScores}
+        favorites={favorites}
+        targetCoordinates={targetCoordinates}
         onTrailSelect={(trail) => {
           console.log(`Pressed: ${trail.name} ${trail.score}`);
           setCurrentTrail(trail);

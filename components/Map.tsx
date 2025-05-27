@@ -5,9 +5,9 @@ import Mapbox from "@rnmapbox/maps";
 import type { FeatureCollection, Point } from "geojson";
 import { useEffect, useRef, useState } from "react";
 
-interface PointProperties extends TrailCoordinates {
+export type TrailWithScore = TrailCoordinates & {
   score: number;
-}
+};
 
 Mapbox.setAccessToken(
   "pk.eyJ1IjoiaGlrZXdpc2UiLCJhIjoiY21hcGZ2MnFrMGVxdjJscjA3d3M2ejg2biJ9.BnOHZXq733sdJwvu1K_2-Q"
@@ -30,13 +30,13 @@ Mapbox.Logger.setLogLevel("verbose");
 //   })),
 // };
 
-function toGeoJson(points: TrailCoordinates[]) {
-  const geojson: FeatureCollection<Point, PointProperties> = {
+function toGeoJson(points: TrailWithScore[]) {
+  const geojson: FeatureCollection<Point, TrailWithScore> = {
     type: "FeatureCollection",
     features: points.map((p) => ({
       type: "Feature",
       id: p.name,
-      properties: { ...p, score: Math.random() * 10 },
+      properties: p,
       geometry: { type: "Point", coordinates: [p.longitude, p.latitude] },
     })),
   };
@@ -46,11 +46,12 @@ function toGeoJson(points: TrailCoordinates[]) {
 const MAP_STYLE_URL = "mapbox://styles/hikewise/cmawz9a9r006w01sdawjq2n4d";
 
 interface MapProps {
-  trails: TrailCoordinates[];
-  onTrailSelect?: (trail: PointProperties) => void;
+  trails: TrailWithScore[];
+  onTrailSelect?: (trail: TrailWithScore) => void;
   onUserMoveMap?: () => void;
   onCurrentLocationChange?: (location: Mapbox.Location) => void;
   favorites?: string[];
+  targetCoordinates?: number[];
 }
 
 export default function Map(props: MapProps) {
@@ -67,6 +68,14 @@ export default function Map(props: MapProps) {
       );
     }
   }, []);
+
+  useEffect(() => {
+    if (props.targetCoordinates !== undefined)
+      cameraRef.current?.setCamera({
+        centerCoordinate: props.targetCoordinates,
+        zoomLevel: 12,
+      });
+  }, [props.targetCoordinates]);
 
   // useEffect(() => {}, [mapViewRef.current?]);
 
@@ -114,7 +123,7 @@ export default function Map(props: MapProps) {
                 .coordinates,
               zoomLevel: 12,
             });
-            props.onTrailSelect?.(feature.properties as PointProperties);
+            props.onTrailSelect?.(feature.properties as TrailWithScore);
           }}
         >
           {/* <Mapbox.SymbolLayer
