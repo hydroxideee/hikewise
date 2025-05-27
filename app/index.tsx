@@ -19,6 +19,7 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import Mapbox from "@rnmapbox/maps";
 import { Image } from "expo-image";
 import { Href, useRouter } from "expo-router";
+import _ from "lodash";
 import debounce from "lodash.debounce";
 import React, {
   useCallback,
@@ -42,7 +43,7 @@ const { width, height } = Dimensions.get("window");
 export default function Index() {
   const router = useRouter();
 
-  const { favorites, setFavorites, weatherPreferences } =
+  const { favorites, setFavorites, weatherPreferences, radius } =
     useContext(StorageContext);
 
   const [targetCoordinates, setTargetCoordinates] = useState<
@@ -169,6 +170,28 @@ export default function Index() {
     setTimeout(() => setIsNav(false), 50);
   };
 
+  function distanceToTrail(trail: TrailCoordinates) {
+    return currentLocation
+      ? calculateDistance(
+          currentLocation?.coords.latitude,
+          currentLocation?.coords.longitude,
+          trail.latitude,
+          trail.longitude
+        )
+      : null;
+  }
+
+  function showTrail(trail: TrailWithScore) {
+    setCurrentTrail(trail);
+    setTrailImageUrl(null);
+    getTrailImages(trail).then((t) => {
+      const imageUrl = t.imageUrls[0];
+      console.log(imageUrl);
+      setTrailImageUrl(imageUrl);
+    });
+    openSheet();
+  }
+
   return (
     <View style={styles.container}>
       <MapDisplay
@@ -177,14 +200,7 @@ export default function Index() {
         targetCoordinates={targetCoordinates}
         onTrailSelect={(trail) => {
           console.log(`Pressed: ${trail.name} ${trail.score}`);
-          setCurrentTrail(trail);
-          setTrailImageUrl(null);
-          getTrailImages(trail).then((t) => {
-            const imageUrl = t.imageUrls[0];
-            console.log(imageUrl);
-            setTrailImageUrl(imageUrl);
-          });
-          openSheet();
+          showTrail(trail);
         }}
         onCurrentLocationChange={(location: Mapbox.Location) =>
           setCurrentLocation(location)
@@ -202,7 +218,23 @@ export default function Index() {
       </Pressable>
 
       {/* Recommend button to trigger bottom sheet on best trail*/}
-      <Pressable style={styles.recButton}>
+      <Pressable
+        onPress={() => {
+          let filteredTrails = trailsWithScores.filter((t) => {
+            console.log(
+              t.name,
+              distanceToTrail(t) ?? Infinity,
+              (distanceToTrail(t) ?? Infinity) <= radius
+            );
+            return (distanceToTrail(t) ?? Infinity) <= radius;
+          });
+          let trail = _.maxBy(filteredTrails, (t) => t.score);
+          if (trail === undefined) return;
+          setTargetCoordinates([trail.longitude, trail.latitude]);
+          showTrail(trail);
+        }}
+        style={styles.recButton}
+      >
         <Text style={styles.buttonText}>Recommend</Text>
       </Pressable>
 
@@ -230,15 +262,7 @@ export default function Index() {
             <View style={styles.leftSection}>
               <Text style={styles.sheetTitle}>{currentTrail.name}</Text>
               <Text style={styles.infoText}>
-                Distance:{" "}
-                {currentLocation?.coords
-                  ? calculateDistance(
-                      currentLocation?.coords.latitude,
-                      currentLocation?.coords.longitude,
-                      currentTrail.latitude,
-                      currentTrail.longitude
-                    ).toFixed(1)
-                  : "..."}{" "}
+                Distance: {distanceToTrail(currentTrail)?.toFixed(1) ?? "..."}{" "}
                 km
               </Text>
               {/* <Text style={styles.infoText}>Temperature: 23 C</Text>
