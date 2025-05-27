@@ -78,8 +78,12 @@ export default function Index() {
     Map<string, WeatherResponse>
   >(new Map());
 
+  const currentWeatherReady = useMemo(() => {
+    console.log(currentWeatherMap.size === KNOWN_TRAILS.length);
+    return currentWeatherMap.size === KNOWN_TRAILS.length;
+  }, [currentWeatherMap]);
+
   function updateCurrentWeatherMap(key: string, value: WeatherResponse) {
-    console.log(2, currentWeatherMap.entries.length);
     setCurrentWeatherMap((prev) => {
       const newMap = new Map(prev);
       newMap.set(key, value);
@@ -99,29 +103,32 @@ export default function Index() {
   }, [KNOWN_TRAILS, date]);
 
   function updateScores() {
-    setTrailsWithScores(
-      KNOWN_TRAILS.map((trail) => {
+    console.log(1, currentWeatherMap.size);
+    setTrailsWithScores((prev) => [
+      ...prev,
+      ...KNOWN_TRAILS.map((trail) => {
         const weather = currentWeatherMap.get(trail.name);
         if (weather !== undefined) {
           const score = getScore(weather, weatherPreferences);
           console.log(trail.name, score);
           return { ...trail, score: getScore(weather, weatherPreferences) };
         }
-      }).filter((t) => t !== undefined)
-    );
+      }).filter((t) => t !== undefined),
+    ]);
   }
 
   const debouncedUpdateScore = useMemo(
     () => debounce(updateScores, 100),
-    [KNOWN_TRAILS]
+    [KNOWN_TRAILS, currentWeatherMap]
   );
 
-  const updateScore = useCallback(() => {
-    console.log(1);
+  const updateScoresFromPreferences = useCallback(() => {
     debouncedUpdateScore();
   }, [debouncedUpdateScore]);
 
-  useEffect(updateScore, [currentWeatherMap, weatherPreferences]);
+  useEffect(updateScoresFromPreferences, [weatherPreferences]);
+
+  useEffect(updateScores, [currentWeatherReady]);
 
   // State for hourly/daily view
   const [viewMode, setViewMode] = useState<"hourly" | "daily">("hourly");
