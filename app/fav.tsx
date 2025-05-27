@@ -1,7 +1,10 @@
 import { StorageContext } from "@/context/storageContext";
+import { KNOWN_TRAILS, TrailCoordinates } from "@/scripts/data/knownTrails";
+import { calculateDistance } from "@/scripts/services/trailService";
 import { MaterialIcons } from "@expo/vector-icons";
+import * as Location from "expo-location";
 import { useRouter } from "expo-router";
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import {
   Dimensions,
   Pressable,
@@ -17,6 +20,27 @@ const itemHeight = screenHeight * 0.3;
 export default function FavScreen() {
   const router = useRouter();
   const { favorites, setFavorites } = useContext(StorageContext);
+  const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
+
+  // Get current location
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        return;
+      }
+
+      const location = await Location.getCurrentPositionAsync({});
+      setCurrentLocation(location);
+    })();
+  }, []);
+
+  // Look up full trail information for each favorite name
+  const favoriteTrails = useMemo(() => {
+    return favorites
+      .map(name => KNOWN_TRAILS.find(trail => trail.name === name))
+      .filter((trail): trail is TrailCoordinates => trail !== undefined);
+  }, [favorites]);
 
   const handleRemove = (indexToRemove: number) => {
     const updated = favorites.filter((_, i) => i !== indexToRemove);
@@ -34,7 +58,7 @@ export default function FavScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {favorites.map((item: any, index: any) => (
+        {favoriteTrails.map((trail, index) => (
           <View key={index} style={[styles.itemBox, { height: itemHeight }]}>
             {/* Remove Button */}
             <Pressable
@@ -46,9 +70,18 @@ export default function FavScreen() {
 
             {/* Text Content */}
             <View style={styles.textContent}>
-              <Text style={styles.itemText}>{item.name}</Text>
-              <Text style={styles.subheadText}>{item.distance}</Text>
-              <Text style={styles.descriptionText}>{item.description}</Text>
+              <Text style={styles.itemText}>{trail.name}</Text>
+              <Text style={styles.subheadText}>
+                {currentLocation ? 
+                  `Distance: ${calculateDistance(
+                    currentLocation.coords.latitude,
+                    currentLocation.coords.longitude,
+                    trail.latitude,
+                    trail.longitude
+                  ).toFixed(1)} km` :
+                  "Loading distance..."
+                }
+              </Text>
 
               <Pressable
                 style={styles.mapButton}
