@@ -1,4 +1,6 @@
-import Map from "@/components/Map";
+import { FavoriteSvg } from "@/components/FavoriteSvg";
+import MapDisplay, { TrailWithScore } from "@/components/Map";
+import { StorageContext } from "@/context/storageContext";
 import { KNOWN_TRAILS, TrailCoordinates } from "@/scripts/data/knownTrails";
 import CurrentConditionsCard from "@/scripts/services/currentConditionsCard";
 import {
@@ -6,13 +8,27 @@ import {
   getTrailImages,
 } from "@/scripts/services/trailService";
 import WeatherMultiChart from "@/scripts/services/weatherMultiChart";
+import {
+  getScore,
+  WeatherResponse,
+  WeatherService,
+} from "@/scripts/services/weatherService";
 import { MaterialIcons } from "@expo/vector-icons";
 import BottomSheet, { BottomSheetScrollView } from "@gorhom/bottom-sheet";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import Mapbox from "@rnmapbox/maps";
 import { Image } from "expo-image";
 import { Href, useRouter } from "expo-router";
-import React, { useMemo, useRef, useState } from "react";
+import _ from "lodash";
+import debounce from "lodash.debounce";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Dimensions,
   Platform,
@@ -26,6 +42,13 @@ const { width, height } = Dimensions.get("window");
 
 export default function Index() {
   const router = useRouter();
+
+  const { favorites, setFavorites, weatherPreferences, radius } =
+    useContext(StorageContext);
+
+  const [targetCoordinates, setTargetCoordinates] = useState<
+    number[] | undefined
+  >();
 
   // Bottom sheet ref and control
   const sheetRef = useRef<BottomSheet>(null);
@@ -46,6 +69,66 @@ export default function Index() {
 
   // State for selected date
   const [date, setDate] = useState(new Date());
+
+  const [trailsWithScores, setTrailsWithScores] = useState<TrailWithScore[]>(
+    []
+  );
+
+  const [currentWeatherMap, setCurrentWeatherMap] = useState<
+    Map<string, WeatherResponse>
+  >(new Map());
+
+  const currentWeatherReady = useMemo(() => {
+    console.log(currentWeatherMap.size === KNOWN_TRAILS.length);
+    return currentWeatherMap.size === KNOWN_TRAILS.length;
+  }, [currentWeatherMap]);
+
+  function updateCurrentWeatherMap(key: string, value: WeatherResponse) {
+    setCurrentWeatherMap((prev) => {
+      const newMap = new Map(prev);
+      newMap.set(key, value);
+      return newMap;
+    });
+  }
+
+  const weatherService = new WeatherService();
+
+  useEffect(() => {
+    const promises = KNOWN_TRAILS.map((trail) => {
+      weatherService
+        .getCurrentConditions(trail.latitude, trail.longitude)
+        .then((r) => updateCurrentWeatherMap(trail.name, r));
+    });
+    Promise.all(promises);
+  }, [KNOWN_TRAILS, date]);
+
+  function updateScores() {
+    console.log(1, currentWeatherMap.size);
+    setTrailsWithScores((prev) => [
+      ...prev,
+      ...KNOWN_TRAILS.map((trail) => {
+        const weather = currentWeatherMap.get(trail.name);
+        if (weather !== undefined) {
+          const score = getScore(weather, weatherPreferences);
+          console.log(trail.name, score);
+          return { ...trail, score: getScore(weather, weatherPreferences) };
+        }
+      }).filter((t) => t !== undefined),
+    ]);
+  }
+
+  const debouncedUpdateScore = useMemo(
+    () => debounce(updateScores, 100),
+    [KNOWN_TRAILS, currentWeatherMap]
+  );
+
+  const updateScoresFromPreferences = useCallback(() => {
+    debouncedUpdateScore();
+  }, [debouncedUpdateScore]);
+
+  useEffect(updateScoresFromPreferences, [weatherPreferences]);
+
+  useEffect(updateScores, [currentWeatherReady]);
 
   // State for hourly/daily view
   const [viewMode, setViewMode] = useState<"hourly" | "daily">("hourly");
@@ -91,23 +174,40 @@ export default function Index() {
     if (isNav) return;
     setIsNav(true);
     router.push(path);
-    setTimeout(() => setIsNav(false), 500);
+    setTimeout(() => setIsNav(false), 50);
   };
+
+  function distanceToTrail(trail: TrailCoordinates) {
+    return currentLocation
+      ? calculateDistance(
+          currentLocation?.coords.latitude,
+          currentLocation?.coords.longitude,
+          trail.latitude,
+          trail.longitude
+        )
+      : null;
+  }
+
+  function showTrail(trail: TrailWithScore) {
+    setCurrentTrail(trail);
+    setTrailImageUrl(null);
+    getTrailImages(trail).then((t) => {
+      const imageUrl = t.imageUrls[0];
+      console.log(imageUrl);
+      setTrailImageUrl(imageUrl);
+    });
+    openSheet();
+  }
 
   return (
     <View style={styles.container}>
-      <Map
-        trails={KNOWN_TRAILS}
+      <MapDisplay
+        trails={trailsWithScores}
+        favorites={favorites}
+        targetCoordinates={targetCoordinates}
         onTrailSelect={(trail) => {
           console.log(`Pressed: ${trail.name} ${trail.score}`);
-          setCurrentTrail(trail);
-          setTrailImageUrl(null);
-          getTrailImages(trail).then((t) => {
-            const imageUrl = t.imageUrls[0];
-            console.log(imageUrl);
-            setTrailImageUrl(imageUrl);
-          });
-          openSheet();
+          showTrail(trail);
         }}
         onCurrentLocationChange={(location: Mapbox.Location) =>
           setCurrentLocation(location)
@@ -121,11 +221,27 @@ export default function Index() {
 
       {/* Right nav button (Favorites) */}
       <Pressable onPress={() => handleNav("/fav")} style={styles.rightIcon}>
-        <MaterialIcons name="star" size={48} color="#333" />
+        <FavoriteSvg size={48} active />
       </Pressable>
 
       {/* Recommend button to trigger bottom sheet on best trail*/}
-      <Pressable style={styles.recButton}>
+      <Pressable
+        onPress={() => {
+          let filteredTrails = trailsWithScores.filter((t) => {
+            console.log(
+              t.name,
+              distanceToTrail(t) ?? Infinity,
+              (distanceToTrail(t) ?? Infinity) <= radius
+            );
+            return (distanceToTrail(t) ?? Infinity) <= radius;
+          });
+          let trail = _.maxBy(filteredTrails, (t) => t.score);
+          if (trail === undefined) return;
+          setTargetCoordinates([trail.longitude, trail.latitude]);
+          showTrail(trail);
+        }}
+        style={styles.recButton}
+      >
         <Text style={styles.buttonText}>Recommend</Text>
       </Pressable>
 
@@ -153,15 +269,7 @@ export default function Index() {
             <View style={styles.leftSection}>
               <Text style={styles.sheetTitle}>{currentTrail.name}</Text>
               <Text style={styles.infoText}>
-                Distance:{" "}
-                {currentLocation?.coords
-                  ? calculateDistance(
-                      currentLocation?.coords.latitude,
-                      currentLocation?.coords.longitude,
-                      currentTrail.latitude,
-                      currentTrail.longitude
-                    ).toFixed(1)
-                  : "..."}{" "}
+                Distance: {distanceToTrail(currentTrail)?.toFixed(1) ?? "..."}{" "}
                 km
               </Text>
               {/* <Text style={styles.infoText}>Temperature: 23 C</Text>
@@ -175,14 +283,32 @@ export default function Index() {
                 />
               </View>
             </View>
-            <View style={styles.imageContainer}>
-              {trailImageUrl ? (
-                <Image source={trailImageUrl} style={styles.trailImage} />
-              ) : (
-                <View style={styles.placeholderImage}>
-                  {/* <Text style={{ color: "#000" }}>Image</Text> */}
-                </View>
-              )}
+            <View style={styles.infoRightSide}>
+              <View style={styles.favoriteBox}>
+                <Pressable
+                  onPress={() =>
+                    setFavorites((prev) =>
+                      favorites.includes(currentTrail.name)
+                        ? prev.filter((n) => n !== currentTrail.name)
+                        : [...prev, currentTrail.name]
+                    )
+                  }
+                >
+                  <FavoriteSvg
+                    size={40}
+                    active={favorites.includes(currentTrail.name)}
+                  />
+                </Pressable>
+              </View>
+              <View style={styles.imageContainer}>
+                {trailImageUrl ? (
+                  <Image source={trailImageUrl} style={styles.trailImage} />
+                ) : (
+                  <View style={styles.placeholderImage}>
+                    {/* <Text style={{ color: "#000" }}>Image</Text> */}
+                  </View>
+                )}
+              </View>
             </View>
           </View>
 
@@ -301,7 +427,7 @@ const styles = StyleSheet.create({
   sheetHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "stretch",
     marginBottom: 20,
   },
   leftSection: {
@@ -314,7 +440,6 @@ const styles = StyleSheet.create({
     borderColor: "#000",
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: 20,
   },
   placeholderImage: {
     width: "100%",
@@ -372,5 +497,23 @@ const styles = StyleSheet.create({
     flex: 1,
     width: "100%",
     backgroundColor: "#0553",
+  },
+  infoRightSide: {
+    maxWidth: 160,
+    flex: 1,
+    flexDirection: "column",
+    flexGrow: 1,
+    justifyContent: "flex-start",
+
+    gap: 30,
+    alignItems: "flex-end",
+  },
+  favoriteBox: {
+    marginTop: 20,
+    marginLeft: 20,
+    justifyContent: "flex-start",
+    width: 140,
+    alignItems: "center",
+    // marginBottom: 50,
   },
 });

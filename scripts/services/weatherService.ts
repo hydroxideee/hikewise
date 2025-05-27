@@ -1,3 +1,4 @@
+import { WeatherPreferences } from "@/context/storageContext";
 
 // Types
 interface WeatherCondition {
@@ -186,4 +187,16 @@ export class WeatherService {
       throw new Error('An unexpected error occurred while fetching daily forecast');
     }
   }
+}
+
+
+export function getScore(weather: WeatherResponse, preferences: WeatherPreferences): number {
+  const score = 30-(
+    Math.log((weather.temperature.degrees - preferences.temperature + 1)**2) +
+     Math.log((weather.wind.speed.value - preferences.windSpeed/3 + 1)**2) +
+      Math.log((weather.precipitation.probability.percent - preferences.precipitation + 1)**2) +
+       Math.log((weather.cloudCover - preferences.cloudCover + 1)**2) +
+        Math.log((weather.uvIndex - preferences.uvIndex/10 + 1)**2)
+      ) 
+  return Math.min(10, Math.max(score, 0)) ?? 0
 }

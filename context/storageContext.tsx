@@ -7,7 +7,7 @@ import React, {
   useState,
 } from "react";
 
-type WeatherPreferences = {
+export type WeatherPreferences = {
   temperature: number;
   windSpeed: number;
   precipitation: number;
