@@ -1,10 +1,10 @@
 import { MapContext } from "@/context/mapContext";
 import { StorageContext } from "@/context/storageContext";
 import { KNOWN_TRAILS, TrailCoordinates } from "@/scripts/data/knownTrails";
-import { calculateDistance } from "@/scripts/services/trailService";
+import { calculateDistance, getTrailImages } from "@/scripts/services/trailService";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useContext, useMemo } from "react";
+import React, { useContext, useMemo, useState, useEffect } from "react";
 import {
   Dimensions,
   Pressable,
@@ -12,6 +12,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Image,
 } from "react-native";
 
 const screenHeight = Dimensions.get("window").height;
@@ -26,6 +27,7 @@ export default function FavScreen() {
     currentLocation,
     setCurrentLocation,
   } = useContext(MapContext);
+  const [trailImages, setTrailImages] = useState<{ [key: string]: string[] }>({});
 
   // // Get current location
   // useEffect(() => {
@@ -46,6 +48,24 @@ export default function FavScreen() {
       .map((name) => KNOWN_TRAILS.find((trail) => trail.name === name))
       .filter((trail): trail is TrailCoordinates => trail !== undefined);
   }, [favorites]);
+
+  // Fetch images for each trail
+  useEffect(() => {
+    const fetchImages = async () => {
+      const images: { [key: string]: string[] } = {};
+      for (const trail of favoriteTrails) {
+        try {
+          const trailInfo = await getTrailImages(trail);
+          images[trail.name] = trailInfo.imageUrls;
+        } catch (error) {
+          console.error(`Error fetching images for ${trail.name}:`, error);
+          images[trail.name] = [];
+        }
+      }
+      setTrailImages(images);
+    };
+    fetchImages();
+  }, [favoriteTrails]);
 
   const handleRemove = (indexToRemove: number) => {
     const updated = favorites.filter((_, i) => i !== indexToRemove);
@@ -104,11 +124,19 @@ export default function FavScreen() {
               </Pressable>
             </View>
 
-            {/* Placeholder Image */}
+            {/* Trail Image */}
             <View style={styles.imageContainer}>
-              <View style={styles.placeholderImage}>
-                <Text style={{ color: "#000" }}>Image</Text>
-              </View>
+              {trailImages[trail.name]?.[0] ? (
+                <Image
+                  source={{ uri: trailImages[trail.name][0] }}
+                  style={styles.trailImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.placeholderImage}>
+                  <Text style={{ color: "#000" }}>No Image</Text>
+                </View>
+              )}
             </View>
           </View>
         ))}
@@ -205,5 +233,10 @@ const styles = StyleSheet.create({
     top: 8,
     right: 8,
     zIndex: 1,
+  },
+  trailImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 10,
   },
 });
